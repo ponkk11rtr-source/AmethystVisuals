@@ -2715,11 +2715,7 @@ const eventFilters = [
       }
       if (typeof parsed !== 'object' || parsed === null) return;
       const candidate = parsed as { n?: unknown; a?: unknown; m?: unknown };
-      if (
-        typeof candidate.n !== 'string' ||
-        typeof candidate.a !== 'number' ||
-        typeof candidate.m !== 'string'
-      ) {
+      if (typeof candidate.n !== 'string' || typeof candidate.a !== 'number' || typeof candidate.m !== 'string') {
         return;
       }
       const name = candidate.n.trim();
