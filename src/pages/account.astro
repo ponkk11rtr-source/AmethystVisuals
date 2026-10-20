@@ -843,9 +843,51 @@ const eventFilters = [
                     <p class="text-xs text-white/40">Новых заявок нет</p>
                   </div>
 
+                  <template data-request-template>
+                    <div class="acc-friend" data-request data-request-kind="incoming">
+                      <span
+                        class="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-violet-200"
+                      >
+                        <Icon name="tabler:user-plus" class="h-4 w-4" />
+                      </span>
+                      <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-medium text-white/90" data-request-name>Игрок</p>
+                        <p class="truncate text-[0.7rem] text-white/35" data-request-status>
+                          хочет добавить вас в друзья
+                        </p>
+                      </div>
+                      <button type="button" class="acc-request-accept" data-request-accept>Принять</button>
+                      <button
+                        type="button"
+                        class="acc-friend-remove"
+                        data-request-decline
+                        aria-label="Отклонить заявку"
+                      >
+                        <Icon name="tabler:x" class="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </template>
+
+                  <template data-outgoing-template>
+                    <div class="acc-friend" data-request data-request-kind="outgoing">
+                      <span
+                        class="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 text-white/45"
+                      >
+                        <Icon name="tabler:clock" class="h-4 w-4" />
+                      </span>
+                      <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-medium text-white/90" data-request-name>Игрок</p>
+                        <p class="truncate text-[0.7rem] text-white/35">заявка отправлена, ожидает ответа</p>
+                      </div>
+                      <button type="button" class="acc-friend-remove" data-request-cancel aria-label="Отменить заявку">
+                        <Icon name="tabler:x" class="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </template>
+
                   <p class="mt-4 text-[0.68rem] leading-relaxed text-white/30">
-                    Список друзей хранится в этом браузере, не отправляется на сервер и автоматически подхватывается
-                    клиентом Amethyst Visuals.
+                    Заявка приходит другу в меню "Друзья" в клиенте Amethyst Visuals. Оба игрока должны быть в игре, а
+                    ник аккаунта должен совпадать с игровым.
                   </p>
                 </article>
               </div>
@@ -1671,6 +1713,27 @@ const eventFilters = [
     opacity: 0.6;
   }
 
+  .acc-request-accept {
+    flex-shrink: 0;
+    border-radius: 0.6rem;
+    border: 1px solid rgb(52 211 153 / 28%);
+    background-color: rgb(16 185 129 / 14%);
+    padding: 0.4rem 0.7rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: rgb(167 243 208);
+    transition:
+      background-color 0.25s ease,
+      border-color 0.25s ease,
+      color 0.25s ease;
+  }
+
+  .acc-request-accept:hover {
+    border-color: rgb(52 211 153 / 50%);
+    background-color: rgb(16 185 129 / 28%);
+    color: #fff;
+  }
+
   .acc-friend-remove {
     display: inline-flex;
     width: 1.8rem;
@@ -2100,6 +2163,574 @@ const eventFilters = [
     if (persist) persistFriends();
   };
 
+  /* ── Friend requests over MQTT (same channel as the client) ─────────── */
+
+  const OUTGOING_PREFIX = 'amethyst:outgoing:';
+  const INCOMING_PREFIX = 'amethyst:incoming:';
+  const REQUEST_TTL_MS = 10 * 60 * 1000;
+  const FRIEND_BUS_TOPIC = 'amethystvisuals/v1/friend/';
+  const FRIEND_BUS_KEY = 'amethystvisuals-friend-relay-v1';
+
+  type FriendRequest = { name: string; at: number };
+  type FriendEvent = { t: string; f: string; n: string; a: number; m: string };
+  type RequestResult = 'ok' | 'invalid' | 'self' | 'friend' | 'pending' | 'limit' | 'offline' | 'nick';
+
+  const isGameNick = (name: string) => /^[A-Za-z0-9_]{3,16}$/.test(name);
+  const sameName = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
+
+  const readRequestList = (prefix: string, email: string): FriendRequest[] => {
+    try {
+      const parsed: unknown = JSON.parse(localStorage.getItem(prefix + email) || '[]');
+      if (!Array.isArray(parsed)) return [];
+      const now = Date.now();
+      const seen = new Set<string>();
+      const rows: FriendRequest[] = [];
+      for (const raw of parsed) {
+        if (typeof raw !== 'object' || raw === null) continue;
+        const candidate = raw as { name?: unknown; at?: unknown };
+        if (typeof candidate.name !== 'string' || !isGameNick(candidate.name)) continue;
+        if (typeof candidate.at !== 'number' || !Number.isFinite(candidate.at)) continue;
+        if (candidate.at <= 0 || now - candidate.at > REQUEST_TTL_MS) continue;
+        if (candidate.at - now > 120000) continue;
+        const key = candidate.name.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        rows.push({ name: candidate.name, at: candidate.at });
+      }
+      return rows.slice(0, 100);
+    } catch {
+      return [];
+    }
+  };
+
+  const saveRequestList = (prefix: string, email: string, rows: FriendRequest[]) => {
+    const unique: FriendRequest[] = [];
+    const seen = new Set<string>();
+    rows.forEach((row) => {
+      if (!isGameNick(row.name)) return;
+      const key = row.name.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      unique.push(row);
+    });
+    localStorage.setItem(prefix + email, JSON.stringify(unique.slice(0, 100)));
+  };
+
+  const removeFriendRow = (nick: string) => {
+    const list = document.querySelector<HTMLElement>('[data-friend-list]');
+    if (!list) return;
+    const row = Array.from(list.querySelectorAll<HTMLElement>('[data-friend]')).find((entry) => {
+      const name = entry.querySelector<HTMLElement>('[data-friend-name]')?.textContent?.trim() || '';
+      return sameName(name, nick);
+    });
+    if (!row) return;
+    row.remove();
+    persistFriends();
+    updateFriendCounters();
+  };
+
+  const renderRequests = (email: string) => {
+    const list = document.querySelector<HTMLElement>('[data-request-list]');
+    if (!list) return;
+    list.replaceChildren();
+    const incoming = readRequestList(INCOMING_PREFIX, email).sort((a, b) => b.at - a.at);
+    const outgoing = readRequestList(OUTGOING_PREFIX, email).sort((a, b) => b.at - a.at);
+    const incomingTemplate = document.querySelector<HTMLTemplateElement>('[data-request-template]');
+    const outgoingTemplate = document.querySelector<HTMLTemplateElement>('[data-outgoing-template]');
+    const appendRow = (template: HTMLTemplateElement | null, row: FriendRequest) => {
+      const node = template?.content.firstElementChild?.cloneNode(true) as HTMLElement | null;
+      if (!node) return;
+      const nameEl = node.querySelector<HTMLElement>('[data-request-name]');
+      if (nameEl) nameEl.textContent = row.name;
+      list.append(node);
+    };
+    incoming.forEach((row) => appendRow(incomingTemplate, row));
+    outgoing.forEach((row) => appendRow(outgoingTemplate, row));
+    updateFriendCounters();
+  };
+
+  const clearRequests = () => {
+    const list = document.querySelector<HTMLElement>('[data-request-list]');
+    if (list) list.replaceChildren();
+    updateFriendCounters();
+  };
+
+  const mqttEncoder = new TextEncoder();
+  const mqttDecoder = new TextDecoder();
+  const toHex = (buffer: ArrayBuffer): string =>
+    Array.from(new Uint8Array(buffer))
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join('');
+  const mqttString = (value: string): number[] => {
+    const bytes = mqttEncoder.encode(value);
+    return [bytes.length >> 8, bytes.length & 255, ...bytes];
+  };
+  const mqttPacket = (type: number, flags: number, body: number[]): Uint8Array => {
+    const header: number[] = [(type << 4) | flags];
+    let remaining = body.length;
+    do {
+      let digit = remaining % 128;
+      remaining = Math.floor(remaining / 128);
+      if (remaining > 0) digit |= 128;
+      header.push(digit);
+    } while (remaining > 0);
+    return new Uint8Array([...header, ...body]);
+  };
+
+  const MQTT_BROKERS = ['wss://broker.hivemq.com:8884/mqtt', 'wss://broker.emqx.io:8084/mqtt'];
+
+  class FriendBus {
+    private socket: WebSocket | null = null;
+    private brokerIndex = 0;
+    private reconnectTimer: number | undefined;
+    private pingTimer: number | undefined;
+    private connectTimer: number | undefined;
+    private connected = false;
+    private started = false;
+    private selfName = '';
+    private selfHash = '';
+    private email = '';
+    private readonly clientId = 'avsite' + Date.now().toString(36).slice(-6) + Math.random().toString(36).slice(2, 6);
+    private readonly waiters: Array<(ok: boolean) => void> = [];
+    private readonly hashCache = new Map<string, string>();
+    private readonly requestTimers = new Map<string, number>();
+    private hmacKey: CryptoKey | null = null;
+
+    start(email: string, nickname: string) {
+      if (this.started && this.email === email && this.selfName === nickname) {
+        if (!this.socket) this.connect();
+        return;
+      }
+      this.stop();
+      this.started = true;
+      this.email = email;
+      this.selfName = nickname;
+      this.selfHash = '';
+      if (!isGameNick(nickname)) return;
+      void this.hash(nickname)
+        .then((hash) => {
+          if (!this.started || this.selfName !== nickname || !hash) return;
+          this.selfHash = hash;
+          this.connect();
+        })
+        .catch(() => {
+          // без Web Crypto мост не поднимется, но локальный список друзей работает
+        });
+    }
+
+    stop() {
+      this.started = false;
+      this.email = '';
+      this.selfName = '';
+      this.selfHash = '';
+      this.connected = false;
+      this.clearTimers();
+      this.resolveWaiters(false);
+      this.closeSocket();
+      for (const timer of this.requestTimers.values()) window.clearInterval(timer);
+      this.requestTimers.clear();
+    }
+
+    async request(target: string): Promise<RequestResult> {
+      const user = currentUser();
+      if (!user) return 'invalid';
+      if (!isGameNick(user.nickname)) return 'nick';
+      if (!isGameNick(target)) return 'invalid';
+      if (sameName(target, user.nickname)) return 'self';
+      if (readFriends(user.email).some((name) => sameName(name, target))) return 'friend';
+      const outgoing = readRequestList(OUTGOING_PREFIX, user.email);
+      if (outgoing.some((row) => sameName(row.name, target))) return 'pending';
+      if (readFriends(user.email).length >= 100) return 'limit';
+
+      const at = Date.now();
+      const sent = await this.send('AVFR', user.nickname, target, at);
+      if (!sent) return 'offline';
+
+      outgoing.push({ name: target, at });
+      saveRequestList(OUTGOING_PREFIX, user.email, outgoing);
+      this.startRequestTimer(user.email, target, at);
+      addFriendRow(target, false, true);
+      renderRequests(user.email);
+      return 'ok';
+    }
+
+    async accept(name: string) {
+      const user = currentUser();
+      if (!user || !isGameNick(name)) return;
+      saveRequestList(
+        INCOMING_PREFIX,
+        user.email,
+        readRequestList(INCOMING_PREFIX, user.email).filter((row) => !sameName(row.name, name))
+      );
+      addFriendRow(name, false, true);
+      renderRequests(user.email);
+      const ok = await this.send('AVFA', user.nickname, name, Date.now());
+      showPanelNote(
+        'friends',
+        ok ? `${name} добавлен в друзья.` : `${name} добавлен, но ответ не отправлен: нет связи.`,
+        ok ? 'ok' : 'error'
+      );
+    }
+
+    async decline(name: string) {
+      const user = currentUser();
+      if (!user || !isGameNick(name)) return;
+      saveRequestList(
+        INCOMING_PREFIX,
+        user.email,
+        readRequestList(INCOMING_PREFIX, user.email).filter((row) => !sameName(row.name, name))
+      );
+      renderRequests(user.email);
+      const ok = await this.send('AVFD', user.nickname, name, Date.now());
+      showPanelNote(
+        'friends',
+        ok ? `Заявка от ${name} отклонена.` : `Заявка от ${name} отклонена локально: нет связи.`,
+        ok ? 'ok' : 'error'
+      );
+    }
+
+    cancel(name: string) {
+      const user = currentUser();
+      if (!user) return;
+      this.clearRequestTimer(user.email, name);
+      saveRequestList(
+        OUTGOING_PREFIX,
+        user.email,
+        readRequestList(OUTGOING_PREFIX, user.email).filter((row) => !sameName(row.name, name))
+      );
+      renderRequests(user.email);
+      showPanelNote('friends', `Заявка для ${name} отменена.`);
+    }
+
+    /** После перезагрузки страницы повторяем ещё не принятые заявки. */
+    resumeOutgoing(email: string) {
+      const now = Date.now();
+      readRequestList(OUTGOING_PREFIX, email).forEach((row) => {
+        if (now - row.at <= 120000) this.startRequestTimer(email, row.name, row.at);
+      });
+    }
+
+    private startRequestTimer(email: string, name: string, at: number) {
+      const key = email + '|' + name.toLowerCase();
+      if (this.requestTimers.has(key)) return;
+      const timer = window.setInterval(() => {
+        const stillPending = readRequestList(OUTGOING_PREFIX, email).some((row) => sameName(row.name, name));
+        if (!stillPending || Date.now() - at > 120000) {
+          window.clearInterval(timer);
+          this.requestTimers.delete(key);
+          return;
+        }
+        const user = currentUser();
+        if (!user || user.email !== email) return;
+        void this.send('AVFR', user.nickname, name, at);
+      }, 20000);
+      this.requestTimers.set(key, timer);
+    }
+
+    private clearRequestTimer(email: string, name: string) {
+      const key = email + '|' + name.toLowerCase();
+      const timer = this.requestTimers.get(key);
+      if (timer === undefined) return;
+      window.clearInterval(timer);
+      this.requestTimers.delete(key);
+    }
+
+    private async send(type: string, from: string, to: string, at: number): Promise<boolean> {
+      if (!this.started || !this.selfHash || !isGameNick(from) || !isGameNick(to)) return false;
+      try {
+        const ready = await this.ensureConnected(6000);
+        if (!ready) return false;
+        const signature = await this.sign(`${type}|${from}|${to}|${at}`);
+        const targetHash = await this.hash(to);
+        if (!signature || !targetHash) return false;
+        const payload = JSON.stringify({ t: type, f: from, n: to, a: at, m: signature });
+        return this.publish(FRIEND_BUS_TOPIC + targetHash, payload);
+      } catch {
+        return false;
+      }
+    }
+
+    private connect() {
+      if (!this.started || !this.selfHash) return;
+      this.closeSocket();
+      this.connected = false;
+      const broker = MQTT_BROKERS[this.brokerIndex % MQTT_BROKERS.length];
+      let socket: WebSocket;
+      try {
+        socket = new WebSocket(broker, ['mqtt']);
+      } catch {
+        this.scheduleReconnect();
+        return;
+      }
+      this.socket = socket;
+      socket.binaryType = 'arraybuffer';
+      this.connectTimer = window.setTimeout(() => {
+        if (!this.connected) this.failConnection();
+      }, 7000);
+      socket.onopen = () => {
+        this.sendRaw(this.connectPacket());
+      };
+      socket.onmessage = (event) => {
+        void this.onMessage(event);
+      };
+      socket.onerror = () => {
+        // close event schedules the next attempt
+      };
+      socket.onclose = () => {
+        if (this.socket === socket) this.socket = null;
+        this.connected = false;
+        this.clearTimers();
+        this.resolveWaiters(false);
+        if (this.started) this.scheduleReconnect();
+      };
+    }
+
+    private connectPacket(): Uint8Array {
+      return mqttPacket(1, 0, [...mqttString('MQTT'), 4, 2, 0, 60, ...mqttString(this.clientId)]);
+    }
+
+    private closeSocket() {
+      const socket = this.socket;
+      this.socket = null;
+      if (!socket) return;
+      socket.onopen = null;
+      socket.onmessage = null;
+      socket.onerror = null;
+      socket.onclose = null;
+      try {
+        socket.close();
+      } catch {
+        // already closed
+      }
+    }
+
+    private clearTimers() {
+      if (this.reconnectTimer !== undefined) {
+        window.clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = undefined;
+      }
+      if (this.pingTimer !== undefined) {
+        window.clearInterval(this.pingTimer);
+        this.pingTimer = undefined;
+      }
+      if (this.connectTimer !== undefined) {
+        window.clearTimeout(this.connectTimer);
+        this.connectTimer = undefined;
+      }
+    }
+
+    private failConnection() {
+      this.connected = false;
+      this.clearTimers();
+      this.closeSocket();
+      this.resolveWaiters(false);
+      if (this.started) this.scheduleReconnect();
+    }
+
+    private scheduleReconnect() {
+      if (!this.started || this.reconnectTimer !== undefined) return;
+      this.reconnectTimer = window.setTimeout(() => {
+        this.reconnectTimer = undefined;
+        this.brokerIndex = (this.brokerIndex + 1) % MQTT_BROKERS.length;
+        this.connect();
+      }, 4000);
+    }
+
+    private resolveWaiters(ok: boolean) {
+      const pending = this.waiters.splice(0, this.waiters.length);
+      pending.forEach((resolve) => resolve(ok));
+    }
+
+    private ensureConnected(timeoutMs: number): Promise<boolean> {
+      if (this.connected) return Promise.resolve(true);
+      if (!this.started || !this.selfHash) return Promise.resolve(false);
+      if (!this.socket) this.connect();
+      return new Promise((resolve) => {
+        let settled = false;
+        const finish = (ok: boolean) => {
+          if (settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          resolve(ok);
+        };
+        const timer = window.setTimeout(() => {
+          const index = this.waiters.indexOf(finish);
+          if (index >= 0) this.waiters.splice(index, 1);
+          finish(false);
+        }, timeoutMs);
+        this.waiters.push(finish);
+      });
+    }
+
+    private sendRaw(packet: Uint8Array) {
+      if (this.socket?.readyState === WebSocket.OPEN) this.socket.send(packet);
+    }
+
+    private publish(topic: string, payload: string): boolean {
+      if (!this.connected || this.socket?.readyState !== WebSocket.OPEN) return false;
+      const packet = mqttPacket(3, 0, [...mqttString(topic), ...mqttEncoder.encode(payload)]);
+      this.socket.send(packet);
+      return true;
+    }
+
+    private async onMessage(event: MessageEvent) {
+      const raw: unknown = event.data;
+      let data: Uint8Array;
+      if (raw instanceof ArrayBuffer) data = new Uint8Array(raw);
+      else if (raw instanceof Blob) data = new Uint8Array(await raw.arrayBuffer());
+      else return;
+
+      let offset = 0;
+      while (offset < data.length) {
+        const first = data[offset++];
+        let remaining = 0;
+        let multiplier = 1;
+        let digit: number;
+        do {
+          if (offset >= data.length) return;
+          digit = data[offset++];
+          remaining += (digit & 127) * multiplier;
+          multiplier *= 128;
+        } while ((digit & 128) !== 0);
+        if (offset + remaining > data.length) return;
+        const body = data.subarray(offset, offset + remaining);
+        offset += remaining;
+        const type = first >> 4;
+        const flags = first & 15;
+        if (type === 2) {
+          if (body.length >= 2 && body[1] === 0) this.onConnected();
+          else this.failConnection();
+        } else if (type === 3) {
+          await this.onPublish(body, flags);
+        }
+      }
+    }
+
+    private onConnected() {
+      if (!this.socket || !this.started) return;
+      this.connected = true;
+      if (this.connectTimer !== undefined) {
+        window.clearTimeout(this.connectTimer);
+        this.connectTimer = undefined;
+      }
+      this.sendRaw(mqttPacket(8, 2, [0, 1, ...mqttString(FRIEND_BUS_TOPIC + this.selfHash), 0]));
+      this.resolveWaiters(true);
+      if (this.pingTimer !== undefined) window.clearInterval(this.pingTimer);
+      this.pingTimer = window.setInterval(() => {
+        if (this.socket?.readyState === WebSocket.OPEN) this.sendRaw(new Uint8Array([0xc0, 0]));
+      }, 45000);
+    }
+
+    private async onPublish(body: Uint8Array, flags: number) {
+      if (body.length < 2) return;
+      const topicLength = (body[0] << 8) | body[1];
+      if (body.length < 2 + topicLength) return;
+      const topic = mqttDecoder.decode(body.subarray(2, 2 + topicLength));
+      let index = 2 + topicLength;
+      const qos = (flags >> 1) & 3;
+      if (qos > 0) {
+        if (body.length < index + 2) return;
+        const packetId = (body[index] << 8) | body[index + 1];
+        index += 2;
+        if (qos === 1) this.sendRaw(mqttPacket(4, 0, [packetId >> 8, packetId & 255]));
+      }
+      if (!topic.startsWith(FRIEND_BUS_TOPIC)) return;
+      const payload = mqttDecoder.decode(body.subarray(index));
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(payload);
+      } catch {
+        return;
+      }
+      if (typeof parsed !== 'object' || parsed === null) return;
+      const candidate = parsed as { t?: unknown; f?: unknown; n?: unknown; a?: unknown; m?: unknown };
+      if (
+        typeof candidate.t !== 'string' ||
+        typeof candidate.f !== 'string' ||
+        typeof candidate.n !== 'string' ||
+        typeof candidate.a !== 'number' ||
+        typeof candidate.m !== 'string'
+      ) {
+        return;
+      }
+      try {
+        await this.handleEvent({ t: candidate.t, f: candidate.f, n: candidate.n, a: candidate.a, m: candidate.m });
+      } catch {
+        // ignored
+      }
+    }
+
+    private async handleEvent(event: FriendEvent) {
+      if (!this.started || !this.email || !this.selfHash) return;
+      if (event.t !== 'AVFR' && event.t !== 'AVFA' && event.t !== 'AVFD') return;
+      if (!isGameNick(event.f) || !isGameNick(event.n)) return;
+      if (!sameName(event.n, this.selfName) || sameName(event.f, this.selfName)) return;
+      const now = Date.now();
+      if (event.a <= 0 || now - event.a > REQUEST_TTL_MS || event.a - now > 120000) return;
+      const expected = await this.sign(`${event.t}|${event.f}|${event.n}|${event.a}`);
+      if (!expected || expected !== event.m.toLowerCase()) return;
+
+      const email = this.email;
+      if (event.t === 'AVFR') {
+        const incoming = readRequestList(INCOMING_PREFIX, email);
+        if (incoming.some((row) => sameName(row.name, event.f))) return;
+        incoming.push({ name: event.f, at: event.a });
+        saveRequestList(INCOMING_PREFIX, email, incoming);
+        renderRequests(email);
+        showPanelNote('friends', `${event.f} хочет добавить вас в друзья.`);
+        return;
+      }
+
+      this.clearRequestTimer(email, event.f);
+      saveRequestList(
+        OUTGOING_PREFIX,
+        email,
+        readRequestList(OUTGOING_PREFIX, email).filter((row) => !sameName(row.name, event.f))
+      );
+      if (event.t === 'AVFA') {
+        addFriendRow(event.f, false, true);
+        showPanelNote('friends', `${event.f} принял заявку.`);
+      } else {
+        removeFriendRow(event.f);
+        showPanelNote('friends', `${event.f} отклонил заявку.`);
+      }
+      renderRequests(email);
+    }
+
+    private async hash(name: string): Promise<string> {
+      const key = name.toLowerCase();
+      const cached = this.hashCache.get(key);
+      if (cached) return cached;
+      if (!globalThis.crypto?.subtle) return '';
+      const digest = await globalThis.crypto.subtle.digest(
+        'SHA-256',
+        mqttEncoder.encode('amethystvisuals-player-name-v1:' + key)
+      );
+      const value = toHex(digest);
+      this.hashCache.set(key, value);
+      return value;
+    }
+
+    private async sign(body: string): Promise<string> {
+      if (!globalThis.crypto?.subtle) return '';
+      let key = this.hmacKey;
+      if (!key) {
+        key = await globalThis.crypto.subtle.importKey(
+          'raw',
+          mqttEncoder.encode(FRIEND_BUS_KEY),
+          { name: 'HMAC', hash: 'SHA-256' },
+          false,
+          ['sign']
+        );
+        this.hmacKey = key;
+      }
+      const digest = await globalThis.crypto.subtle.sign('HMAC', key, mqttEncoder.encode(body));
+      return toHex(digest).slice(0, 32);
+    }
+  }
+
+  const friendBus = new FriendBus();
+
   const addPresetCard = (name: string) => {
     const grid = document.querySelector<HTMLElement>('[data-config-grid]');
     const cards = grid?.querySelectorAll<HTMLElement>('[data-preset]');
@@ -2183,6 +2814,9 @@ const eventFilters = [
     applyPrefs(user.email);
     applyActivePreset(user.email);
     renderFriends(user.email);
+    renderRequests(user.email);
+    friendBus.start(user.email, user.nickname);
+    friendBus.resumeOutgoing(user.email);
 
     const hash = window.location.hash.replace('#', '');
     const panel = PANELS.find((value) => value === hash);
@@ -2195,8 +2829,10 @@ const eventFilters = [
     if (!guestView || !accountView) return;
     accountView.hidden = true;
     guestView.hidden = false;
+    friendBus.stop();
     const friendList = document.querySelector<HTMLElement>('[data-friend-list]');
     if (friendList) friendList.replaceChildren();
+    clearRequests();
     updateFriendCounters();
     setMode(mode);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2300,21 +2936,24 @@ const eventFilters = [
     const accept = target.closest<HTMLElement>('[data-request-accept]');
     if (accept) {
       const request = accept.closest<HTMLElement>('[data-request]');
-      const nick = request?.querySelector<HTMLElement>('[data-request-name]')?.textContent?.trim() || 'Игрок';
-      request?.remove();
-      addFriendRow(nick, true, true);
-      updateFriendCounters();
-      showPanelNote('friends', `${nick} добавлен в друзья.`);
+      const nick = request?.querySelector<HTMLElement>('[data-request-name]')?.textContent?.trim() || '';
+      if (isGameNick(nick)) void friendBus.accept(nick);
       return;
     }
 
     const decline = target.closest<HTMLElement>('[data-request-decline]');
     if (decline) {
       const request = decline.closest<HTMLElement>('[data-request]');
-      const nick = request?.querySelector<HTMLElement>('[data-request-name]')?.textContent?.trim() || 'Игрок';
-      request?.remove();
-      updateFriendCounters();
-      showPanelNote('friends', `Заявка от ${nick} отклонена.`);
+      const nick = request?.querySelector<HTMLElement>('[data-request-name]')?.textContent?.trim() || '';
+      if (isGameNick(nick)) void friendBus.decline(nick);
+      return;
+    }
+
+    const cancelRequest = target.closest<HTMLElement>('[data-request-cancel]');
+    if (cancelRequest) {
+      const request = cancelRequest.closest<HTMLElement>('[data-request]');
+      const nick = request?.querySelector<HTMLElement>('[data-request-name]')?.textContent?.trim() || '';
+      if (isGameNick(nick)) friendBus.cancel(nick);
       return;
     }
 
@@ -2451,9 +3090,49 @@ const eventFilters = [
           showPanelNote('friends', 'Никнейм должен быть от 3 до 16 символов: A-Z, 0-9, _.', 'error');
           return;
         }
-        addFriendRow(nick, false, true);
-        if (input) input.value = '';
-        showPanelNote('friends', `${nick} добавлен в друзья.`);
+        const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        if (submit) submit.disabled = true;
+        try {
+          const result = await friendBus.request(nick);
+          let message: string;
+          let tone: 'ok' | 'error' = 'ok';
+          switch (result) {
+            case 'ok':
+              message = `Заявка отправлена игроку ${nick}. Друг должен принять её в меню "Друзья".`;
+              break;
+            case 'self':
+              message = 'Нельзя добавить самого себя.';
+              tone = 'error';
+              break;
+            case 'friend':
+              message = `${nick} уже в друзьях.`;
+              tone = 'error';
+              break;
+            case 'pending':
+              message = `Заявка для ${nick} уже отправлена.`;
+              tone = 'error';
+              break;
+            case 'limit':
+              message = 'Достигнут лимит друзей.';
+              tone = 'error';
+              break;
+            case 'nick':
+              message = 'Ник аккаунта должен совпадать с игровым: A-Z, 0-9, _.';
+              tone = 'error';
+              break;
+            case 'offline':
+              message = 'Нет связи с каналом заявок. Проверь интернет и попробуй ещё раз.';
+              tone = 'error';
+              break;
+            default:
+              message = 'Никнейм должен быть от 3 до 16 символов: A-Z, 0-9, _.';
+              tone = 'error';
+          }
+          showPanelNote('friends', message, tone);
+          if (result === 'ok' && input) input.value = '';
+        } finally {
+          if (submit) submit.disabled = false;
+        }
         return;
       }
 
@@ -2484,6 +3163,7 @@ const eventFilters = [
           document.querySelectorAll<HTMLElement>('[data-avatar]').forEach((element) => {
             element.textContent = updated.nickname.slice(0, 1).toUpperCase();
           });
+          friendBus.start(updated.email, updated.nickname);
           if (nickNote) {
             nickNote.textContent = 'Никнейм обновлён.';
             nickNote.classList.remove('text-red-300');
