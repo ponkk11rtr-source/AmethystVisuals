@@ -16,6 +16,9 @@ export type StoredUser = {
 export const USERS_KEY = 'amethyst:users';
 export const SESSION_KEY = 'amethyst:session';
 
+/** Ник аккаунта - это игровой ник: по нему мод и сайт узнают друг друга. */
+const NICK_PATTERN = /^[A-Za-z0-9_]{3,16}$/;
+
 export function readUsers(): StoredUser[] {
   try {
     const parsed = JSON.parse(localStorage.getItem(USERS_KEY) || '[]');
@@ -60,7 +63,9 @@ export async function registerUser(input: { nickname: string; email: string; pas
   const email = input.email.trim().toLowerCase();
   const password = input.password;
 
-  if (nickname.length < 3) throw new Error('Никнейм должен быть не короче 3 символов.');
+  if (!NICK_PATTERN.test(nickname)) {
+    throw new Error('Никнейм: 3-16 символов, только A-Z, 0-9 и _. Он должен совпадать с игровым ником.');
+  }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Похоже, email указан неверно.');
   if (password.length < 6) throw new Error('Пароль должен быть не короче 6 символов.');
 
@@ -102,7 +107,9 @@ export async function loginUser(emailInput: string, password: string): Promise<S
 
 export function updateNickname(email: string, nickname: string): StoredUser {
   const clean = nickname.trim();
-  if (clean.length < 3) throw new Error('Никнейм должен быть не короче 3 символов.');
+  if (!NICK_PATTERN.test(clean)) {
+    throw new Error('Никнейм: 3-16 символов, только A-Z, 0-9 и _. Он должен совпадать с игровым ником.');
+  }
 
   const users = readUsers();
   const index = users.findIndex((user) => user.email === email);

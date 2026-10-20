@@ -886,8 +886,8 @@ const eventFilters = [
                   </template>
 
                   <p class="mt-4 text-[0.68rem] leading-relaxed text-white/30">
-                    Заявка приходит другу в меню "Друзья" в клиенте Amethyst Visuals. Оба игрока должны быть в игре, а
-                    ник аккаунта должен совпадать с игровым.
+                    Заявка приходит другу в меню "Друзья" в клиенте Amethyst Visuals. Мод слушает и игровой ник, и ник
+                    аккаунта из лаунчера, а статус "в сети" обновляется по каналу клиента.
                   </p>
                 </article>
               </div>
@@ -2079,6 +2079,35 @@ const eventFilters = [
     if (requestsEmpty) requestsEmpty.hidden = requests > 0;
   };
 
+  /* ── Онлайн-статус: мод заявляет о себе в канал присутствия ──────────── */
+
+  const PRESENCE_TOPIC = 'amethystvisuals/v1/presence/';
+  const PRESENCE_TTL_MS = 120000;
+  const presenceSeen = new Map<string, number>();
+
+  const isPresenceOnline = (nick: string) => {
+    const seenAt = presenceSeen.get(nick.toLowerCase());
+    return seenAt !== undefined && Date.now() - seenAt <= PRESENCE_TTL_MS;
+  };
+
+  const applyPresence = () => {
+    const now = Date.now();
+    for (const [name, seenAt] of presenceSeen) {
+      if (now - seenAt > PRESENCE_TTL_MS) presenceSeen.delete(name);
+    }
+    document.querySelectorAll<HTMLElement>('[data-friend]').forEach((row) => {
+      const nick = row.querySelector<HTMLElement>('[data-friend-name]')?.textContent?.trim() || '';
+      const online = nick.length > 0 && isPresenceOnline(nick);
+      row.dataset.online = String(online);
+      const dot = row.querySelector<HTMLElement>('[data-friend-dot]');
+      dot?.classList.toggle('bg-emerald-400', online);
+      dot?.classList.toggle('bg-white/25', !online);
+      const status = row.querySelector<HTMLElement>('[data-friend-status]');
+      if (status) status.textContent = online ? 'В сети - только что' : 'не в сети';
+    });
+    updateFriendCounters();
+  };
+
   const readFriends = (email: string): string[] => {
     try {
       const parsed = JSON.parse(localStorage.getItem(FRIEND_PREFIX + email) || '[]');
@@ -2118,11 +2147,11 @@ const eventFilters = [
     readFriends(email)
       .slice()
       .reverse()
-      .forEach((nick) => addFriendRow(nick, false, false));
+      .forEach((nick) => addFriendRow(nick, isPresenceOnline(nick), false));
     updateFriendCounters();
   };
 
-  const addFriendRow = (nick: string, online = false, persist = false) => {
+  const addFriendRow = (nick: string, online = isPresenceOnline(nick), persist = false) => {
     const list = document.querySelector<HTMLElement>('[data-friend-list]');
     const template = document.querySelector<HTMLTemplateElement>('[data-friend-template]');
     const node = template?.content.firstElementChild?.cloneNode(true) as HTMLElement | null;
@@ -2150,7 +2179,7 @@ const eventFilters = [
     const nameEl = row.querySelector<HTMLElement>('[data-friend-name]');
     const statusEl = row.querySelector<HTMLElement>('[data-friend-status]');
     if (nameEl) nameEl.textContent = nick;
-    if (statusEl) statusEl.textContent = online ? 'В сети · только что' : 'не в сети';
+    if (statusEl) statusEl.textContent = online ? 'В сети - только что' : 'не в сети';
 
     const invite = row.querySelector<HTMLButtonElement>('[data-friend-invite]');
     if (invite) {
@@ -2295,6 +2324,7 @@ const eventFilters = [
     private readonly waiters: Array<(ok: boolean) => void> = [];
     private readonly hashCache = new Map<string, string>();
     private readonly requestTimers = new Map<string, number>();
+    private presenceTimer: number | undefined;
     private hmacKey: CryptoKey | null = null;
 
     start(email: string, nickname: string) {
@@ -2307,6 +2337,9 @@ const eventFilters = [
       this.email = email;
       this.selfName = nickname;
       this.selfHash = '';
+      if (this.presenceTimer === undefined) {
+        this.presenceTimer = window.setInterval(applyPresence, 5000);
+      }
       if (!isGameNick(nickname)) return;
       void this.hash(nickname)
         .then((hash) => {
@@ -2330,6 +2363,11 @@ const eventFilters = [
       this.closeSocket();
       for (const timer of this.requestTimers.values()) window.clearInterval(timer);
       this.requestTimers.clear();
+      if (this.presenceTimer !== undefined) {
+        window.clearInterval(this.presenceTimer);
+        this.presenceTimer = undefined;
+      }
+      presenceSeen.clear();
     }
 
     async request(target: string): Promise<RequestResult> {
@@ -2350,7 +2388,7 @@ const eventFilters = [
       outgoing.push({ name: target, at });
       saveRequestList(OUTGOING_PREFIX, user.email, outgoing);
       this.startRequestTimer(user.email, target, at);
-      addFriendRow(target, false, true);
+      // Друг появится в списке только после принятия заявки.
       renderRequests(user.email);
       return 'ok';
     }
@@ -2363,7 +2401,7 @@ const eventFilters = [
         user.email,
         readRequestList(INCOMING_PREFIX, user.email).filter((row) => !sameName(row.name, name))
       );
-      addFriendRow(name, false, true);
+      addFriendRow(name, isPresenceOnline(name), true);
       renderRequests(user.email);
       const ok = await this.send('AVFA', user.nickname, name, Date.now());
       showPanelNote(
@@ -2615,6 +2653,8 @@ const eventFilters = [
         this.connectTimer = undefined;
       }
       this.sendRaw(mqttPacket(8, 2, [0, 1, ...mqttString(FRIEND_BUS_TOPIC + this.selfHash), 0]));
+      // Присутствие мода: по нему сайт понимает, кто из друзей сейчас в игре.
+      this.sendRaw(mqttPacket(8, 2, [0, 2, ...mqttString(PRESENCE_TOPIC + '+'), 0]));
       this.resolveWaiters(true);
       if (this.pingTimer !== undefined) window.clearInterval(this.pingTimer);
       this.pingTimer = window.setInterval(() => {
@@ -2635,8 +2675,12 @@ const eventFilters = [
         index += 2;
         if (qos === 1) this.sendRaw(mqttPacket(4, 0, [packetId >> 8, packetId & 255]));
       }
-      if (!topic.startsWith(FRIEND_BUS_TOPIC)) return;
       const payload = mqttDecoder.decode(body.subarray(index));
+      if (topic.startsWith(PRESENCE_TOPIC)) {
+        await this.handlePresence(topic, payload);
+        return;
+      }
+      if (!topic.startsWith(FRIEND_BUS_TOPIC)) return;
       let parsed: unknown;
       try {
         parsed = JSON.parse(payload);
@@ -2659,6 +2703,36 @@ const eventFilters = [
       } catch {
         // ignored
       }
+    }
+
+    private async handlePresence(topic: string, payload: string) {
+      if (!this.started) return;
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(payload);
+      } catch {
+        return;
+      }
+      if (typeof parsed !== 'object' || parsed === null) return;
+      const candidate = parsed as { n?: unknown; a?: unknown; m?: unknown };
+      if (
+        typeof candidate.n !== 'string' ||
+        typeof candidate.a !== 'number' ||
+        typeof candidate.m !== 'string'
+      ) {
+        return;
+      }
+      const name = candidate.n.trim();
+      if (!isGameNick(name)) return;
+      const at = candidate.a;
+      const now = Date.now();
+      if (at <= 0 || now - at > PRESENCE_TTL_MS || at - now > 120000) return;
+      const hash = await this.hash(name);
+      if (!hash || topic.toLowerCase() !== (PRESENCE_TOPIC + hash).toLowerCase()) return;
+      const expected = await this.sign('P|' + name + '|' + at);
+      if (!expected || expected !== candidate.m.toLowerCase()) return;
+      presenceSeen.set(name.toLowerCase(), Date.now());
+      applyPresence();
     }
 
     private async handleEvent(event: FriendEvent) {
@@ -2689,7 +2763,7 @@ const eventFilters = [
         readRequestList(OUTGOING_PREFIX, email).filter((row) => !sameName(row.name, event.f))
       );
       if (event.t === 'AVFA') {
-        addFriendRow(event.f, false, true);
+        addFriendRow(event.f, isPresenceOnline(event.f), true);
         showPanelNote('friends', `${event.f} принял заявку.`);
       } else {
         removeFriendRow(event.f);
@@ -2708,6 +2782,7 @@ const eventFilters = [
         mqttEncoder.encode('amethystvisuals-player-name-v1:' + key)
       );
       const value = toHex(digest);
+      if (this.hashCache.size > 500) this.hashCache.clear();
       this.hashCache.set(key, value);
       return value;
     }
