@@ -72,112 +72,6 @@ const presets = [
     active: false,
   },
 ];
-
-const ftEvents = [
-  {
-    name: 'Вулкан',
-    icon: 'tabler:volcano',
-    rarity: 'Элитный',
-    rarityClass: 'border-fuchsia-400/30 bg-fuchsia-400/10 text-fuchsia-300',
-    tone: 'from-orange-500/35 to-rose-600/20',
-    cat: 'pvp',
-    desc: 'Извержение раскрывает жилы ресурсов — успей собрать их до лавы.',
-    time: 'через 40 мин',
-    server: 'Survival',
-    reward: 'Незерит, изумруды, кит',
-  },
-  {
-    name: 'Гейзер',
-    icon: 'tabler:droplets',
-    rarity: 'Богатый',
-    rarityClass: 'border-violet-400/30 bg-violet-400/10 text-violet-300',
-    tone: 'from-sky-500/35 to-cyan-600/20',
-    cat: 'drop',
-    desc: 'Гейзеры выбрасывают руду и кристаллы прямо на поверхность.',
-    time: 'через 1 ч 10 мин',
-    server: 'SkyBlock',
-    reward: 'Руда, кристаллы, монеты',
-  },
-  {
-    name: 'Алтарь',
-    icon: 'tabler:torii',
-    rarity: 'Элитный',
-    rarityClass: 'border-fuchsia-400/30 bg-fuchsia-400/10 text-fuchsia-300',
-    tone: 'from-fuchsia-500/35 to-purple-600/20',
-    cat: 'pvp',
-    desc: 'Активируй алтарь и удержи его до конца таймера.',
-    time: 'через 2 ч',
-    server: 'Анархия',
-    reward: 'Ключи, зачарованные книги',
-  },
-  {
-    name: 'Маяк',
-    icon: 'tabler:broadcast',
-    rarity: 'Солидный',
-    rarityClass: 'border-sky-400/30 bg-sky-400/10 text-sky-300',
-    tone: 'from-sky-500/30 to-blue-600/20',
-    cat: 'pvp',
-    desc: 'Захвати маяк и удержи позицию под давлением других команд.',
-    time: 'через 3 ч',
-    server: 'BedWars',
-    reward: 'Бустеры, токены',
-  },
-  {
-    name: 'Мистический алтарь',
-    icon: 'tabler:sparkles',
-    rarity: 'Легендарный',
-    rarityClass: 'border-amber-400/35 bg-amber-400/10 text-amber-300',
-    tone: 'from-amber-500/30 to-fuchsia-600/20',
-    cat: 'rare',
-    desc: 'Редчайший ивент с мифическим лутом и уникальной косметикой.',
-    time: 'сегодня 21:00',
-    server: 'Survival',
-    reward: 'Мифический лут, косметика',
-  },
-  {
-    name: 'Метеорит',
-    icon: 'tabler:meteor',
-    rarity: 'Богатый',
-    rarityClass: 'border-violet-400/30 bg-violet-400/10 text-violet-300',
-    tone: 'from-violet-500/35 to-indigo-600/20',
-    cat: 'drop',
-    desc: 'Метеорит падает и создаёт кратер с редкими рудами.',
-    time: 'через 4 ч',
-    server: 'Анархия',
-    reward: 'Древние обломки, алмазы',
-  },
-  {
-    name: 'Сундук смерти',
-    icon: 'tabler:skull',
-    rarity: 'Обычный',
-    rarityClass: 'border-white/20 bg-white/5 text-white/60',
-    tone: 'from-slate-500/30 to-zinc-600/20',
-    cat: 'drop',
-    desc: 'На месте гибели игрока появляется сундук с его лутом.',
-    time: 'через 25 мин',
-    server: 'Анархия',
-    reward: 'Лут погибшего игрока',
-  },
-  {
-    name: 'Аирдроп',
-    icon: 'tabler:parachute',
-    rarity: 'Легендарный',
-    rarityClass: 'border-amber-400/35 bg-amber-400/10 text-amber-300',
-    tone: 'from-amber-500/35 to-orange-600/20',
-    cat: 'rare',
-    desc: 'Сундуки с лутом падают на спавн — первый забравший получает всё.',
-    time: 'через 12 мин',
-    server: 'Анархия',
-    reward: 'Алмазы, незерит, кит',
-  },
-];
-
-const eventFilters = [
-  { value: 'all', label: 'Все' },
-  { value: 'drop', label: 'Дроп' },
-  { value: 'pvp', label: 'PvP' },
-  { value: 'rare', label: 'Легендарные' },
-];
 ---
 
 <PageLayout metadata={metadata}>
@@ -505,18 +399,6 @@ const eventFilters = [
                 <span class="acc-nav-icon"><Icon name="tabler:adjustments" class="h-4 w-4" /></span>
                 <span class="flex-1 text-left">Конфиги</span>
                 <span class="acc-nav-badge" data-configs-badge>{presets.length}</span>
-              </button>
-              <button
-                type="button"
-                class="acc-nav-item"
-                data-acc-tab="events"
-                data-active="false"
-                role="tab"
-                aria-selected="false"
-              >
-                <span class="acc-nav-icon"><Icon name="tabler:sparkles" class="h-4 w-4" /></span>
-                <span class="flex-1 text-left">Ивенты FT</span>
-                <span class="acc-nav-live">LIVE</span>
               </button>
             </nav>
 
@@ -1004,167 +886,24 @@ const eventFilters = [
                 </button>
               </article>
             </section>
-
-            <!-- Events -->
-            <section data-acc-panel="events" class="acc-panel" role="tabpanel" hidden>
-              <article
-                class="relative overflow-hidden rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-700/30 via-[#0b0718] to-fuchsia-700/20 p-6 md:p-8"
-              >
-                <div class="pointer-events-none absolute inset-0" aria-hidden="true">
-                  <div class="absolute -right-16 -top-20 h-52 w-52 rounded-full bg-fuchsia-600/25 blur-3xl"></div>
-                  <div class="absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-violet-600/30 blur-3xl"></div>
-                </div>
-
-                <div class="relative flex flex-wrap items-start justify-between gap-6">
-                  <div>
-                    <span class="eyebrow">FunTime · Ближайший ивент</span>
-                    <div class="mt-3 flex flex-wrap items-center gap-3">
-                      <h2 class="text-2xl font-extrabold tracking-tight text-white md:text-3xl">Аирдроп</h2>
-                      <span
-                        class="rounded-full border border-amber-400/35 bg-amber-400/10 px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.12em] text-amber-300"
-                        >Легендарный</span
-                      >
-                    </div>
-                    <p class="mt-2 max-w-md text-sm leading-relaxed text-white/55">
-                      Сундуки с лутом падают на спавн — первый забравший получает всё.
-                    </p>
-
-                    <div class="mt-4 flex flex-wrap gap-2 text-[0.7rem] text-white/60">
-                      <span
-                        class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5"
-                      >
-                        <Icon name="tabler:server" class="h-3.5 w-3.5 text-violet-300" />
-                        mc.funtime.su · Анархия
-                      </span>
-                      <span
-                        class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5"
-                      >
-                        <Icon name="tabler:clock" class="h-3.5 w-3.5 text-violet-300" />
-                        Старт через 12 мин
-                      </span>
-                      <span
-                        class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5"
-                      >
-                        <Icon name="tabler:gift" class="h-3.5 w-3.5 text-violet-300" />
-                        Алмазы, незерит, кит
-                      </span>
-                    </div>
-                  </div>
-
-                  <div class="text-left sm:text-right">
-                    <p class="text-[0.65rem] uppercase tracking-[0.18em] text-white/35">До старта</p>
-                    <p class="gradient-text mt-1 font-mono text-4xl font-extrabold" data-countdown="12">12:00</p>
-                  </div>
-                </div>
-
-                <div class="relative mt-6 flex flex-wrap gap-2">
-                  <button type="button" class="btn btn-amethyst !px-5 !py-2.5 text-xs" data-event-remind>
-                    <Icon name="tabler:bell" class="mr-2 h-3.5 w-3.5" data-remind-icon />
-                    <span data-remind-label>Напомнить</span>
-                  </button>
-                  <a
-                    href="https://funtime.me/events"
-                    target="_blank"
-                    rel="noopener"
-                    class="btn btn-ghost !px-5 !py-2.5 text-xs"
-                  >
-                    Все ивенты FunTime ↗
-                  </a>
-                </div>
-              </article>
-
-              <article class="acc-card mt-4 p-6">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 class="text-lg font-semibold text-white">Расписание</h2>
-                    <p class="mt-0.5 text-sm text-white/45">Ивенты на серверах FunTime</p>
-                  </div>
-                  <div class="flex flex-wrap gap-1.5" data-event-filters>
-                    {
-                      eventFilters.map((filter) => (
-                        <button
-                          type="button"
-                          class="acc-filter"
-                          data-event-filter={filter.value}
-                          data-active={filter.value === 'all' ? 'true' : 'false'}
-                        >
-                          {filter.label}
-                        </button>
-                      ))
-                    }
-                  </div>
-                </div>
-
-                <div class="mt-5 grid gap-3 sm:grid-cols-2" data-event-grid>
-                  {
-                    ftEvents.map((event) => (
-                      <article class="acc-event" data-event data-cat={event.cat}>
-                        <div class="flex items-start justify-between gap-3">
-                          <span class:list={['acc-event-icon bg-gradient-to-br', event.tone]}>
-                            <Icon name={event.icon} class="h-4 w-4 text-white/85" />
-                          </span>
-                          <span
-                            class:list={[
-                              'rounded-full border px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em]',
-                              event.rarityClass,
-                            ]}
-                          >
-                            {event.rarity}
-                          </span>
-                        </div>
-
-                        <h3 class="mt-3 text-sm font-semibold text-white">{event.name}</h3>
-                        <p class="mt-1 text-xs leading-relaxed text-white/45">{event.desc}</p>
-
-                        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-[0.68rem] text-white/40">
-                          <span class="inline-flex items-center gap-1">
-                            <Icon name="tabler:clock" class="h-3.5 w-3.5" />
-                            {event.time}
-                          </span>
-                          <span class="inline-flex items-center gap-1">
-                            <Icon name="tabler:server" class="h-3.5 w-3.5" />
-                            {event.server}
-                          </span>
-                        </div>
-
-                        <div class="mt-2 flex items-center gap-1.5 text-[0.68rem] text-violet-200/80">
-                          <Icon name="tabler:gift" class="h-3.5 w-3.5" />
-                          {event.reward}
-                        </div>
-                      </article>
-                    ))
-                  }
-                </div>
-
-                <p class="mt-4 text-[0.68rem] leading-relaxed text-white/30">
-                  Типы ивентов вдохновлены FunTime.me. Актуальное расписание — на
-                  <a
-                    href="https://funtime.me/events"
-                    target="_blank"
-                    rel="noopener"
-                    class="text-violet-300 hover:text-violet-200">funtime.me/events</a
-                  >.
-                </p>
-              </article>
-            </section>
           </div>
         </div>
       </div>
     </div>
   </section>
-
-  <script is:inline>
-    try {
-      if (localStorage.getItem('amethyst:session')) {
-        document.querySelectorAll('[data-view="guest"]').forEach((element) => {
-          element.hidden = true;
-        });
-      }
-    } catch {
-      /* localStorage can be unavailable in private mode */
-    }
-  </script>
 </PageLayout>
+
+<script is:inline>
+  try {
+    if (localStorage.getItem('amethyst:session')) {
+      document.querySelectorAll('[data-view="guest"]').forEach((element) => {
+        element.hidden = true;
+      });
+    }
+  } catch {
+    /* localStorage can be unavailable in private mode */
+  }
+</script>
 
 <style>
   .acc-blob {
@@ -1619,40 +1358,6 @@ const eventFilters = [
     color: #fff;
   }
 
-  .acc-nav-live {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    border-radius: 999px;
-    border: 1px solid rgb(52 211 153 / 25%);
-    background-color: rgb(52 211 153 / 10%);
-    padding: 0.05rem 0.45rem;
-    font-size: 0.55rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
-    color: rgb(110 231 183);
-  }
-
-  .acc-nav-live::before {
-    content: '';
-    width: 0.3rem;
-    height: 0.3rem;
-    border-radius: 999px;
-    background-color: currentColor;
-    box-shadow: 0 0 0 0 rgb(52 211 153 / 60%);
-    animation: acc-pulse 2s ease-out infinite;
-  }
-
-  @keyframes acc-pulse {
-    0% {
-      box-shadow: 0 0 0 0 rgb(52 211 153 / 55%);
-    }
-    70%,
-    100% {
-      box-shadow: 0 0 0 0.35rem rgb(52 211 153 / 0%);
-    }
-  }
-
   .acc-panel-in {
     animation: acc-panel-in 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
   }
@@ -1816,62 +1521,6 @@ const eventFilters = [
       0 20px 40px -30px rgb(139 92 246 / 80%);
   }
 
-  /* ── FunTime events ───────────────────────────────────────────────── */
-  .acc-event {
-    border-radius: 1rem;
-    border: 1px solid rgb(255 255 255 / 7%);
-    background: radial-gradient(120% 120% at 0% 0%, rgb(139 92 246 / 8%), transparent 55%), rgb(255 255 255 / 2.5%);
-    padding: 1rem;
-    transition:
-      transform 0.3s ease,
-      border-color 0.3s ease,
-      box-shadow 0.3s ease;
-  }
-
-  .acc-event:hover {
-    transform: translateY(-3px);
-    border-color: rgb(192 132 252 / 28%);
-    box-shadow: 0 24px 50px -35px rgb(139 92 246 / 90%);
-  }
-
-  .acc-event[hidden] {
-    display: none;
-  }
-
-  .acc-event-icon {
-    display: inline-flex;
-    width: 2rem;
-    height: 2rem;
-    flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    border-radius: 0.6rem;
-    border: 1px solid rgb(255 255 255 / 10%);
-  }
-
-  .acc-filter {
-    border-radius: 999px;
-    border: 1px solid rgb(255 255 255 / 8%);
-    padding: 0.3rem 0.7rem;
-    font-size: 0.68rem;
-    color: rgb(255 255 255 / 50%);
-    transition:
-      background-color 0.25s ease,
-      border-color 0.25s ease,
-      color 0.25s ease;
-  }
-
-  .acc-filter:hover {
-    border-color: rgb(192 132 252 / 30%);
-    color: #fff;
-  }
-
-  .acc-filter[data-active='true'] {
-    border-color: rgb(192 132 252 / 40%);
-    background-color: rgb(139 92 246 / 22%);
-    color: #fff;
-  }
-
   .acc-note {
     border-radius: 0.5rem;
     border: 1px solid rgb(52 211 153 / 25%);
@@ -1894,14 +1543,12 @@ const eventFilters = [
     .acc-blob,
     .acc-avatar::after,
     .acc-orbit,
-    .acc-panel-in,
-    .acc-nav-live::before {
+    .acc-panel-in {
       animation: none;
     }
 
     .acc-preset,
     .acc-preset::after,
-    .acc-event,
     .acc-friend,
     .acc-nav-item {
       transition: none;
@@ -1998,12 +1645,11 @@ const eventFilters = [
   };
 
   /* ── Dashboard panels ─────────────────────────────────────────────── */
-  const PANELS = ['overview', 'friends', 'configs', 'events'] as const;
+  const PANELS = ['overview', 'friends', 'configs'] as const;
   const FRIEND_PREFIX = 'amethyst:friends:';
   type Panel = (typeof PANELS)[number];
 
   const PRESET_PREFIX = 'amethyst:preset:';
-  let countdownTimer: number | undefined;
 
   const openPanel = (panel: Panel, updateHash = true) => {
     const account = document.querySelector<HTMLElement>('[data-view="account"]');
@@ -2838,29 +2484,6 @@ const eventFilters = [
     URL.revokeObjectURL(url);
   };
 
-  const startCountdown = () => {
-    const el = document.querySelector<HTMLElement>('[data-countdown]');
-    if (!el) return;
-
-    window.clearInterval(countdownTimer);
-    let remaining = Number(el.dataset.countdown || '12') * 60;
-
-    const render = () => {
-      const minutes = Math.floor(remaining / 60)
-        .toString()
-        .padStart(2, '0');
-      const seconds = (remaining % 60).toString().padStart(2, '0');
-      el.textContent = `${minutes}:${seconds}`;
-    };
-
-    render();
-    countdownTimer = window.setInterval(() => {
-      remaining = remaining > 0 ? remaining - 1 : 0;
-      render();
-      if (remaining === 0) window.clearInterval(countdownTimer);
-    }, 1000);
-  };
-
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' });
 
@@ -2939,8 +2562,6 @@ const eventFilters = [
       if (accountView) accountView.hidden = true;
       setMode(window.location.hash === '#register' ? 'register' : 'login');
     }
-
-    startCountdown();
   };
 
   /* ── Events (delegated so client-side navigation keeps working) ───── */
@@ -3065,28 +2686,6 @@ const eventFilters = [
         active: card.dataset.active === 'true',
       }));
       downloadJson('amethyst-configs.json', { presets, exportedAt: new Date().toISOString() });
-      return;
-    }
-
-    /* FunTime events */
-    const filter = target.closest<HTMLElement>('[data-event-filter]');
-    if (filter) {
-      const value = filter.dataset.eventFilter || 'all';
-      document.querySelectorAll<HTMLElement>('[data-event-filter]').forEach((button) => {
-        button.dataset.active = String(button === filter);
-      });
-      document.querySelectorAll<HTMLElement>('[data-event]').forEach((card) => {
-        card.hidden = value !== 'all' && card.dataset.cat !== value;
-      });
-      return;
-    }
-
-    const remind = target.closest<HTMLButtonElement>('[data-event-remind]');
-    if (remind) {
-      const on = remind.dataset.on === 'true';
-      remind.dataset.on = String(!on);
-      const label = remind.querySelector<HTMLElement>('[data-remind-label]');
-      if (label) label.textContent = on ? 'Напомнить' : 'Напоминание включено';
       return;
     }
   });
