@@ -2277,7 +2277,8 @@ const eventFilters = [
     return new Uint8Array([...header, ...body]);
   };
 
-  const MQTT_BROKERS = ['wss://broker.hivemq.com:8884/mqtt', 'wss://broker.emqx.io:8084/mqtt'];
+  // EMQX первым: он стабильнее держит WebSocket с GitHub Pages. Мод слушает оба брокера.
+  const MQTT_BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://broker.hivemq.com:8884/mqtt'];
 
   class FriendBus {
     private socket: WebSocket | null = null;
