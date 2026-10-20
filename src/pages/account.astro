@@ -844,7 +844,8 @@ const eventFilters = [
                   </div>
 
                   <p class="mt-4 text-[0.68rem] leading-relaxed text-white/30">
-                    Список друзей хранится только в этом браузере и не отправляется на сервер.
+                    Список друзей хранится в этом браузере, не отправляется на сервер и автоматически подхватывается
+                    клиентом Amethyst Visuals.
                   </p>
                 </article>
               </div>
@@ -2051,7 +2052,10 @@ const eventFilters = [
     const list = document.querySelector<HTMLElement>('[data-friend-list]');
     if (!list) return;
     list.replaceChildren();
-    readFriends(email).forEach((nick) => addFriendRow(nick, false, false));
+    readFriends(email)
+      .slice()
+      .reverse()
+      .forEach((nick) => addFriendRow(nick, false, false));
     updateFriendCounters();
   };
 
