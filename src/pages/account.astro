@@ -1934,6 +1934,7 @@ const eventFilters = [
 
   /* ── Dashboard panels ─────────────────────────────────────────────── */
   const PANELS = ['overview', 'friends', 'configs', 'events'] as const;
+  const FRIEND_PREFIX = 'amethyst:friends:';
   type Panel = (typeof PANELS)[number];
 
   const PRESET_PREFIX = 'amethyst:preset:';
@@ -2014,11 +2015,56 @@ const eventFilters = [
     if (requestsEmpty) requestsEmpty.hidden = requests > 0;
   };
 
-  const addFriendRow = (nick: string, online = false) => {
+  const readFriends = (email: string): string[] => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(FRIEND_PREFIX + email) || '[]');
+      return Array.isArray(parsed) ? parsed.filter((nick) => typeof nick === 'string') : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const saveFriends = (email: string, names: string[]) => {
+    const unique: string[] = [];
+    const seen = new Set<string>();
+    names.forEach((nick) => {
+      const key = nick.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      unique.push(nick);
+    });
+    localStorage.setItem(FRIEND_PREFIX + email, JSON.stringify(unique.slice(0, 100)));
+  };
+
+  const friendNames = () =>
+    Array.from(document.querySelectorAll<HTMLElement>('[data-friend-name]'))
+      .map((element) => element.textContent?.trim() || '')
+      .filter((name) => name.length > 0);
+
+  const persistFriends = () => {
+    const user = currentUser();
+    if (!user) return;
+    saveFriends(user.email, friendNames());
+  };
+
+  const renderFriends = (email: string) => {
+    const list = document.querySelector<HTMLElement>('[data-friend-list]');
+    if (!list) return;
+    list.replaceChildren();
+    readFriends(email).forEach((nick) => addFriendRow(nick, false, false));
+    updateFriendCounters();
+  };
+
+  const addFriendRow = (nick: string, online = false, persist = false) => {
     const list = document.querySelector<HTMLElement>('[data-friend-list]');
     const template = document.querySelector<HTMLTemplateElement>('[data-friend-template]');
     const node = template?.content.firstElementChild?.cloneNode(true) as HTMLElement | null;
     if (!list || !node) return;
+
+    const duplicate = Array.from(list.querySelectorAll<HTMLElement>('[data-friend-name]')).some(
+      (element) => (element.textContent?.trim() || '').toLowerCase() === nick.toLowerCase()
+    );
+    if (duplicate) return;
 
     const row = node;
     row.dataset.online = String(online);
@@ -2047,6 +2093,7 @@ const eventFilters = [
 
     list.prepend(row);
     updateFriendCounters();
+    if (persist) persistFriends();
   };
 
   const addPresetCard = (name: string) => {
@@ -2131,6 +2178,7 @@ const eventFilters = [
     if (nickInput) nickInput.value = user.nickname;
     applyPrefs(user.email);
     applyActivePreset(user.email);
+    renderFriends(user.email);
 
     const hash = window.location.hash.replace('#', '');
     const panel = PANELS.find((value) => value === hash);
@@ -2143,6 +2191,9 @@ const eventFilters = [
     if (!guestView || !accountView) return;
     accountView.hidden = true;
     guestView.hidden = false;
+    const friendList = document.querySelector<HTMLElement>('[data-friend-list]');
+    if (friendList) friendList.replaceChildren();
+    updateFriendCounters();
     setMode(mode);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -2226,6 +2277,7 @@ const eventFilters = [
     const friendRemove = target.closest<HTMLElement>('[data-friend-remove]');
     if (friendRemove) {
       friendRemove.closest<HTMLElement>('[data-friend]')?.remove();
+      persistFriends();
       updateFriendCounters();
       return;
     }
@@ -2246,7 +2298,7 @@ const eventFilters = [
       const request = accept.closest<HTMLElement>('[data-request]');
       const nick = request?.querySelector<HTMLElement>('[data-request-name]')?.textContent?.trim() || 'Игрок';
       request?.remove();
-      addFriendRow(nick, true);
+      addFriendRow(nick, true, true);
       updateFriendCounters();
       showPanelNote('friends', `${nick} добавлен в друзья.`);
       return;
@@ -2391,11 +2443,11 @@ const eventFilters = [
         event.preventDefault();
         const input = form.querySelector<HTMLInputElement>('input[name="nickname"]');
         const nick = input?.value.trim() || '';
-        if (nick.length < 3) {
-          showPanelNote('friends', 'Никнейм должен быть от 3 до 16 символов.', 'error');
+        if (!/^[A-Za-z0-9_]{3,16}$/.test(nick)) {
+          showPanelNote('friends', 'Никнейм должен быть от 3 до 16 символов: A-Z, 0-9, _.', 'error');
           return;
         }
-        addFriendRow(nick);
+        addFriendRow(nick, false, true);
         if (input) input.value = '';
         showPanelNote('friends', `${nick} добавлен в друзья.`);
         return;
