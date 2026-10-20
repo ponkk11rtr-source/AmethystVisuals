@@ -1,0 +1,2458 @@
+---
+import PageLayout from '~/layouts/PageLayout.astro';
+
+import { Icon } from 'astro-icon/components';
+import { Image } from 'astro:assets';
+
+import crystal from '~/assets/images/amethyst-crystal.png';
+import { getHomePermalink, getPermalink } from '~/utils/permalinks';
+
+const metadata = {
+  title: 'Аккаунт — AmethystVisuals',
+  description:
+    'Войди в Amethyst ID или создай аккаунт: косметика, конфиги и раскладка HUD синхронизируются между устройствами.',
+  ignoreTitleTemplate: true,
+};
+
+const perks = [
+  {
+    icon: 'tabler:cloud-check',
+    title: 'Облачная синхронизация',
+    text: 'Косметика, пресеты и HUD переезжают на любое устройство.',
+  },
+  {
+    icon: 'tabler:shield-check',
+    title: 'Пароль под защитой',
+    text: 'В хранилище попадает только SHA-256 хеш, а не сам пароль.',
+  },
+  {
+    icon: 'tabler:gift',
+    title: 'Бонус за регистрацию',
+    text: 'Стартовый набор косметики активируется сразу.',
+  },
+];
+
+const collection = [
+  { value: '535', label: 'косметики' },
+  { value: '32', label: 'модуля' },
+  { value: '12', label: 'пресетов' },
+  { value: '8', label: 'друзей' },
+];
+
+const syncRows = [
+  { key: 'cosmetics', label: 'Косметика', hint: 'капы, скины, крылья' },
+  { key: 'presets', label: 'Пресеты', hint: 'конфиги модулей' },
+  { key: 'hud', label: 'Раскладка HUD', hint: 'позиции и темы' },
+  { key: 'friends', label: 'Друзья', hint: 'список и онлайн' },
+];
+
+const presets = [
+  {
+    name: 'Amethyst Night',
+    meta: '28 модулей · HUD + шейдеры',
+    tone: 'from-violet-600/50 to-fuchsia-600/30',
+    active: true,
+  },
+  {
+    name: 'PvP Clean',
+    meta: '14 модулей · минимализм',
+    tone: 'from-sky-500/40 to-indigo-600/25',
+    active: false,
+  },
+  {
+    name: 'Neon HUD',
+    meta: '22 модуля · неоновая тема',
+    tone: 'from-fuchsia-500/40 to-rose-500/25',
+    active: false,
+  },
+  {
+    name: 'Cinematic',
+    meta: '19 модулей · шейдеры и эффекты',
+    tone: 'from-emerald-500/35 to-teal-600/25',
+    active: false,
+  },
+];
+
+const ftEvents = [
+  {
+    name: 'Вулкан',
+    icon: 'tabler:volcano',
+    rarity: 'Элитный',
+    rarityClass: 'border-fuchsia-400/30 bg-fuchsia-400/10 text-fuchsia-300',
+    tone: 'from-orange-500/35 to-rose-600/20',
+    cat: 'pvp',
+    desc: 'Извержение раскрывает жилы ресурсов — успей собрать их до лавы.',
+    time: 'через 40 мин',
+    server: 'Survival',
+    reward: 'Незерит, изумруды, кит',
+  },
+  {
+    name: 'Гейзер',
+    icon: 'tabler:droplets',
+    rarity: 'Богатый',
+    rarityClass: 'border-violet-400/30 bg-violet-400/10 text-violet-300',
+    tone: 'from-sky-500/35 to-cyan-600/20',
+    cat: 'drop',
+    desc: 'Гейзеры выбрасывают руду и кристаллы прямо на поверхность.',
+    time: 'через 1 ч 10 мин',
+    server: 'SkyBlock',
+    reward: 'Руда, кристаллы, монеты',
+  },
+  {
+    name: 'Алтарь',
+    icon: 'tabler:torii',
+    rarity: 'Элитный',
+    rarityClass: 'border-fuchsia-400/30 bg-fuchsia-400/10 text-fuchsia-300',
+    tone: 'from-fuchsia-500/35 to-purple-600/20',
+    cat: 'pvp',
+    desc: 'Активируй алтарь и удержи его до конца таймера.',
+    time: 'через 2 ч',
+    server: 'Анархия',
+    reward: 'Ключи, зачарованные книги',
+  },
+  {
+    name: 'Маяк',
+    icon: 'tabler:broadcast',
+    rarity: 'Солидный',
+    rarityClass: 'border-sky-400/30 bg-sky-400/10 text-sky-300',
+    tone: 'from-sky-500/30 to-blue-600/20',
+    cat: 'pvp',
+    desc: 'Захвати маяк и удержи позицию под давлением других команд.',
+    time: 'через 3 ч',
+    server: 'BedWars',
+    reward: 'Бустеры, токены',
+  },
+  {
+    name: 'Мистический алтарь',
+    icon: 'tabler:sparkles',
+    rarity: 'Легендарный',
+    rarityClass: 'border-amber-400/35 bg-amber-400/10 text-amber-300',
+    tone: 'from-amber-500/30 to-fuchsia-600/20',
+    cat: 'rare',
+    desc: 'Редчайший ивент с мифическим лутом и уникальной косметикой.',
+    time: 'сегодня 21:00',
+    server: 'Survival',
+    reward: 'Мифический лут, косметика',
+  },
+  {
+    name: 'Метеорит',
+    icon: 'tabler:meteor',
+    rarity: 'Богатый',
+    rarityClass: 'border-violet-400/30 bg-violet-400/10 text-violet-300',
+    tone: 'from-violet-500/35 to-indigo-600/20',
+    cat: 'drop',
+    desc: 'Метеорит падает и создаёт кратер с редкими рудами.',
+    time: 'через 4 ч',
+    server: 'Анархия',
+    reward: 'Древние обломки, алмазы',
+  },
+  {
+    name: 'Сундук смерти',
+    icon: 'tabler:skull',
+    rarity: 'Обычный',
+    rarityClass: 'border-white/20 bg-white/5 text-white/60',
+    tone: 'from-slate-500/30 to-zinc-600/20',
+    cat: 'drop',
+    desc: 'На месте гибели игрока появляется сундук с его лутом.',
+    time: 'через 25 мин',
+    server: 'Анархия',
+    reward: 'Лут погибшего игрока',
+  },
+  {
+    name: 'Аирдроп',
+    icon: 'tabler:parachute',
+    rarity: 'Легендарный',
+    rarityClass: 'border-amber-400/35 bg-amber-400/10 text-amber-300',
+    tone: 'from-amber-500/35 to-orange-600/20',
+    cat: 'rare',
+    desc: 'Сундуки с лутом падают на спавн — первый забравший получает всё.',
+    time: 'через 12 мин',
+    server: 'Анархия',
+    reward: 'Алмазы, незерит, кит',
+  },
+];
+
+const eventFilters = [
+  { value: 'all', label: 'Все' },
+  { value: 'drop', label: 'Дроп' },
+  { value: 'pvp', label: 'PvP' },
+  { value: 'rare', label: 'Легендарные' },
+];
+---
+
+<PageLayout metadata={metadata}>
+  <!-- Background -->
+  <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[900px] overflow-hidden" aria-hidden="true">
+    <div class="acc-blob acc-blob--violet"></div>
+    <div class="acc-blob acc-blob--fuchsia"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_25%,#06040f_75%)]"></div>
+  </div>
+
+  <section class="relative pb-20 pt-28 md:pb-28 md:pt-36">
+    <div class="mx-auto max-w-6xl px-4 sm:px-6">
+      <!-- ══ GUEST: AUTH ═══════════════════════════════════════════════ -->
+      <div data-view="guest">
+        <div class="grid gap-6 lg:grid-cols-[1.02fr_0.98fr]">
+          <!-- Auth card -->
+          <section class="acc-card acc-reveal relative overflow-hidden p-6 sm:p-8">
+            <div
+              class="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-violet-600/20 blur-3xl"
+              aria-hidden="true"
+            >
+            </div>
+
+            <div class="relative flex items-center justify-between">
+              <a href={getHomePermalink()} class="inline-flex items-center gap-2.5 text-sm font-semibold text-white">
+                <Image src={crystal} alt="" width={32} height={32} class="h-7 w-7" />
+                AmethystVisuals
+              </a>
+              <a href={getHomePermalink()} class="text-xs text-white/40 transition-colors hover:text-white"
+                >На главную →</a
+              >
+            </div>
+
+            <div
+              class="auth-tabs relative mt-7 grid grid-cols-2 rounded-xl border border-white/10 bg-white/[0.04] p-1"
+              data-mode="login"
+              data-auth-tabs
+              role="tablist"
+              aria-label="Вход или регистрация"
+            >
+              <span class="auth-tab-indicator" aria-hidden="true"></span>
+              <button
+                type="button"
+                class="auth-tab"
+                data-tab="login"
+                data-active="true"
+                role="tab"
+                aria-selected="true"
+              >
+                Вход
+              </button>
+              <button
+                type="button"
+                class="auth-tab"
+                data-tab="register"
+                data-active="false"
+                role="tab"
+                aria-selected="false">Регистрация</button
+              >
+            </div>
+
+            <div class="mt-7">
+              <h1 class="text-2xl font-bold tracking-tight text-white sm:text-3xl" data-auth-title>С возвращением</h1>
+              <p class="mt-1.5 text-sm text-white/50" data-auth-subtitle>
+                Войди, чтобы забрать сетап на любое устройство.
+              </p>
+            </div>
+
+            <!-- Login -->
+            <form class="auth-form mt-6 space-y-4" data-form="login" data-astro-reload novalidate>
+              <label class="acc-field">
+                <span class="acc-field-label">Email</span>
+                <span class="acc-input-wrap">
+                  <Icon name="tabler:mail" class="acc-input-icon" />
+                  <input
+                    type="email"
+                    name="email"
+                    autocomplete="email"
+                    placeholder="you@example.com"
+                    class="acc-input"
+                  />
+                </span>
+              </label>
+
+              <label class="acc-field">
+                <span class="acc-field-label">Пароль</span>
+                <span class="acc-input-wrap">
+                  <Icon name="tabler:lock" class="acc-input-icon" />
+                  <input
+                    type="password"
+                    name="password"
+                    autocomplete="current-password"
+                    placeholder="••••••••"
+                    class="acc-input"
+                  />
+                  <button type="button" class="acc-eye" data-pass-toggle aria-label="Показать пароль">
+                    <Icon name="tabler:eye" class="eye-open h-4 w-4" />
+                    <Icon name="tabler:eye-off" class="eye-closed hidden h-4 w-4" />
+                  </button>
+                </span>
+              </label>
+
+              <div class="flex items-center justify-between gap-3 text-xs">
+                <label class="inline-flex cursor-pointer items-center gap-2 text-white/50">
+                  <input type="checkbox" name="remember" checked class="acc-checkbox" />
+                  Запомнить меня
+                </label>
+                <button type="button" class="text-violet-300 transition-colors hover:text-violet-200" data-forgot>
+                  Забыли пароль?
+                </button>
+              </div>
+
+              <button type="submit" class="btn btn-amethyst w-full !py-3.5 text-sm">
+                Войти
+                <Icon name="tabler:arrow-right" class="ml-2 h-4 w-4" />
+              </button>
+            </form>
+
+            <!-- Register -->
+            <form class="auth-form mt-6 space-y-4" data-form="register" data-astro-reload hidden novalidate>
+              <label class="acc-field">
+                <span class="acc-field-label">Никнейм</span>
+                <span class="acc-input-wrap">
+                  <Icon name="tabler:user" class="acc-input-icon" />
+                  <input type="text" name="nickname" autocomplete="nickname" placeholder="Steve" class="acc-input" />
+                </span>
+              </label>
+
+              <label class="acc-field">
+                <span class="acc-field-label">Email</span>
+                <span class="acc-input-wrap">
+                  <Icon name="tabler:mail" class="acc-input-icon" />
+                  <input
+                    type="email"
+                    name="email"
+                    autocomplete="email"
+                    placeholder="you@example.com"
+                    class="acc-input"
+                  />
+                </span>
+              </label>
+
+              <label class="acc-field">
+                <span class="acc-field-label">Пароль</span>
+                <span class="acc-input-wrap">
+                  <Icon name="tabler:lock" class="acc-input-icon" />
+                  <input
+                    type="password"
+                    name="password"
+                    autocomplete="new-password"
+                    placeholder="Минимум 6 символов"
+                    class="acc-input"
+                  />
+                  <button type="button" class="acc-eye" data-pass-toggle aria-label="Показать пароль">
+                    <Icon name="tabler:eye" class="eye-open h-4 w-4" />
+                    <Icon name="tabler:eye-off" class="eye-closed hidden h-4 w-4" />
+                  </button>
+                </span>
+              </label>
+
+              <label class="flex cursor-pointer items-start gap-2.5 text-xs leading-relaxed text-white/45">
+                <input type="checkbox" name="terms" class="acc-checkbox mt-0.5" />
+                <span>
+                  Соглашаюсь с
+                  <a href={getPermalink('/terms')} class="text-violet-300 underline-offset-2 hover:underline"
+                    >условиями</a
+                  > и
+                  <a href={getPermalink('/privacy')} class="text-violet-300 underline-offset-2 hover:underline"
+                    >политикой</a
+                  >
+                  конфиденциальности.
+                </span>
+              </label>
+
+              <button type="submit" class="btn btn-amethyst w-full !py-3.5 text-sm">
+                Создать аккаунт
+                <Icon name="tabler:arrow-right" class="ml-2 h-4 w-4" />
+              </button>
+            </form>
+
+            <div class="mt-4">
+              <p
+                data-auth-error
+                class="hidden rounded-xl border border-red-500/30 bg-red-500/10 px-3.5 py-2.5 text-xs text-red-300"
+              >
+              </p>
+              <p
+                data-auth-notice
+                class="hidden rounded-xl border border-violet-400/30 bg-violet-500/10 px-3.5 py-2.5 text-xs text-violet-200"
+              >
+              </p>
+            </div>
+
+            <div class="mt-6 flex items-center gap-3 text-[0.68rem] uppercase tracking-[0.2em] text-white/25">
+              <span class="h-px flex-1 bg-white/10"></span>
+              или
+              <span class="h-px flex-1 bg-white/10"></span>
+            </div>
+
+            <a href={getHomePermalink()} class="btn btn-ghost mt-4 w-full !py-3 text-sm">
+              <Icon name="tabler:player-play" class="mr-2 h-4 w-4" />
+              Продолжить без аккаунта
+            </a>
+
+            <p class="mt-4 text-center text-[0.68rem] leading-relaxed text-white/30">
+              Демо-аккаунт: данные хранятся только в этом браузере. Не используй реальный пароль.
+            </p>
+          </section>
+
+          <!-- Visual -->
+          <aside class="acc-aside acc-reveal hidden overflow-hidden rounded-3xl p-8 lg:flex lg:flex-col">
+            <div>
+              <span class="eyebrow">Amethyst ID</span>
+              <h2 class="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-white">
+                Один аккаунт.<br />
+                <span class="gradient-text">Весь твой сетап.</span>
+              </h2>
+              <p class="mt-3 max-w-sm text-sm leading-relaxed text-white/55">
+                Настрой клиент один раз — и забери косметику, конфиги и раскладку HUD на любое устройство.
+              </p>
+            </div>
+
+            <div class="relative mx-auto my-8 w-full max-w-[240px]">
+              <div class="absolute inset-4 animate-glow rounded-full bg-violet-600/35 blur-3xl" aria-hidden="true">
+              </div>
+              <div class="acc-orbit" aria-hidden="true"></div>
+              <Image
+                src={crystal}
+                alt="Кристалл AmethystVisuals"
+                width={320}
+                height={320}
+                class="relative mx-auto w-40 animate-float drop-shadow-[0_24px_60px_rgba(139,92,246,0.55)] sm:w-48"
+              />
+            </div>
+
+            <ul class="mt-auto space-y-3">
+              {
+                perks.map((perk) => (
+                  <li class="flex items-start gap-3 rounded-xl border border-white/5 bg-white/[0.03] px-3.5 py-3">
+                    <span class="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/15 text-violet-200 ring-1 ring-inset ring-violet-400/25">
+                      <Icon name={perk.icon} class="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p class="text-sm font-medium text-white/90">{perk.title}</p>
+                      <p class="text-xs leading-relaxed text-white/45">{perk.text}</p>
+                    </div>
+                  </li>
+                ))
+              }
+            </ul>
+          </aside>
+        </div>
+      </div>
+
+      <!-- ══ LOGGED IN: DASHBOARD ══════════════════════════════════════ -->
+      <div data-view="account" hidden>
+        <div class="acc-reveal flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div class="flex items-center gap-4">
+            <span class="acc-avatar" data-avatar>A</span>
+            <div class="min-w-0">
+              <span class="eyebrow">Amethyst ID</span>
+              <h1 class="mt-2 truncate text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                Привет, <span class="gradient-text" data-user-nick>—</span>
+              </h1>
+              <p class="truncate text-sm text-white/45" data-user-email>—</p>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2">
+            <a href={getPermalink('/#download')} class="btn btn-amethyst !px-5 !py-3 text-sm">
+              <Icon name="tabler:download" class="mr-2 h-4 w-4" />
+              Скачать лаунчер
+            </a>
+            <button type="button" data-logout class="btn btn-ghost !px-5 !py-3 text-sm">
+              <Icon name="tabler:logout" class="mr-2 h-4 w-4" />
+              Выйти
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-8 grid gap-4 lg:grid-cols-[248px_minmax(0,1fr)] lg:items-start">
+          <!-- Sidebar -->
+          <aside class="acc-card p-2.5 lg:sticky lg:top-24" aria-label="Разделы аккаунта">
+            <div class="flex items-center gap-2 px-3 pb-2 pt-2">
+              <span class="h-1.5 w-1.5 rounded-full bg-violet-400"></span>
+              <span class="text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-white/35">Кабинет</span>
+            </div>
+
+            <nav
+              class="flex gap-1 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0"
+              role="tablist"
+              aria-label="Разделы аккаунта"
+            >
+              <button
+                type="button"
+                class="acc-nav-item"
+                data-acc-tab="overview"
+                data-active="true"
+                role="tab"
+                aria-selected="true"
+              >
+                <span class="acc-nav-icon"><Icon name="tabler:user" class="h-4 w-4" /></span>
+                <span class="flex-1 text-left">Аккаунт</span>
+              </button>
+              <button
+                type="button"
+                class="acc-nav-item"
+                data-acc-tab="friends"
+                data-active="false"
+                role="tab"
+                aria-selected="false"
+              >
+                <span class="acc-nav-icon"><Icon name="tabler:users" class="h-4 w-4" /></span>
+                <span class="flex-1 text-left">Друзья</span>
+                <span class="acc-nav-badge" data-friends-badge>0</span>
+              </button>
+              <button
+                type="button"
+                class="acc-nav-item"
+                data-acc-tab="configs"
+                data-active="false"
+                role="tab"
+                aria-selected="false"
+              >
+                <span class="acc-nav-icon"><Icon name="tabler:adjustments" class="h-4 w-4" /></span>
+                <span class="flex-1 text-left">Конфиги</span>
+                <span class="acc-nav-badge" data-configs-badge>{presets.length}</span>
+              </button>
+              <button
+                type="button"
+                class="acc-nav-item"
+                data-acc-tab="events"
+                data-active="false"
+                role="tab"
+                aria-selected="false"
+              >
+                <span class="acc-nav-icon"><Icon name="tabler:sparkles" class="h-4 w-4" /></span>
+                <span class="flex-1 text-left">Ивенты FT</span>
+                <span class="acc-nav-live">LIVE</span>
+              </button>
+            </nav>
+
+            <div
+              class="mt-2 hidden rounded-xl border border-violet-400/20 bg-gradient-to-br from-violet-600/15 to-transparent p-3.5 lg:block"
+            >
+              <p class="text-[0.62rem] uppercase tracking-[0.18em] text-white/35">Подписка</p>
+              <p class="mt-1 text-sm font-semibold text-white">Free · 0 ₽</p>
+              <p class="text-[0.68rem] text-white/40">все базовые функции</p>
+              <a
+                href={getPermalink('/#pricing')}
+                class="mt-2.5 inline-flex text-[0.7rem] font-medium text-violet-300 hover:text-violet-200"
+              >
+                Улучшить →
+              </a>
+            </div>
+
+            <button
+              type="button"
+              data-open-chat
+              class="mt-2 hidden w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-xs text-white/60 transition hover:border-violet-400/40 hover:text-white lg:flex"
+            >
+              <Icon name="tabler:message-circle" class="h-4 w-4" />
+              Поддержка 24/7
+            </button>
+          </aside>
+
+          <div class="min-w-0">
+            <section data-acc-panel="overview" class="acc-panel" role="tabpanel">
+              <div class="grid gap-4 lg:grid-cols-3">
+                <!-- Plan -->
+                <article class="acc-card acc-reveal p-6" style="animation-delay: 60ms">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-white/40">Тариф</span>
+                    <span
+                      class="rounded-full bg-violet-500/15 px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em] text-violet-200 ring-1 ring-inset ring-violet-400/30"
+                      >Free</span
+                    >
+                  </div>
+                  <p class="gradient-text mt-4 text-4xl font-extrabold">0 ₽</p>
+                  <p class="text-xs text-white/40">навсегда · без карты</p>
+                  <ul class="mt-4 space-y-2 text-sm text-white/60">
+                    <li class="flex items-center gap-2">
+                      <Icon name="tabler:check" class="h-4 w-4 text-violet-300" /> 32 модуля
+                    </li>
+                    <li class="flex items-center gap-2">
+                      <Icon name="tabler:check" class="h-4 w-4 text-violet-300" /> Редактор HUD и темы
+                    </li>
+                    <li class="flex items-center gap-2">
+                      <Icon name="tabler:check" class="h-4 w-4 text-violet-300" /> Стартовая косметика
+                    </li>
+                  </ul>
+                  <a
+                    href={getPermalink('/#pricing')}
+                    class="mt-5 inline-flex text-xs font-medium text-violet-300 hover:text-violet-200"
+                  >
+                    Все возможности →
+                  </a>
+                </article>
+
+                <!-- Collection -->
+                <article class="acc-card acc-reveal p-6 lg:col-span-2" style="animation-delay: 120ms">
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2 class="text-sm font-semibold uppercase tracking-[0.16em] text-white/40">Твоя коллекция</h2>
+                    <span class="inline-flex items-center gap-1.5 text-[0.7rem] text-emerald-300">
+                      <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                      синхронизировано
+                    </span>
+                  </div>
+
+                  <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {
+                      collection.map((item) => (
+                        <div class="rounded-xl border border-white/5 bg-white/[0.04] px-4 py-4 transition-colors hover:border-violet-400/30">
+                          <p class="text-2xl font-extrabold text-white">{item.value}</p>
+                          <p class="mt-0.5 text-[0.7rem] uppercase tracking-[0.12em] text-white/35">{item.label}</p>
+                        </div>
+                      ))
+                    }
+                  </div>
+
+                  <div class="mt-5">
+                    <div class="flex items-center justify-between text-xs text-white/40">
+                      <span>Заполнено 64%</span>
+                      <span>Blossom set</span>
+                    </div>
+                    <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                      <div class="h-full w-[64%] rounded-full bg-gradient-to-r from-violet-500 to-fuchsia-500"></div>
+                    </div>
+                  </div>
+                </article>
+              </div>
+
+              <div class="mt-4 grid gap-4 lg:grid-cols-3">
+                <!-- Profile -->
+                <article class="acc-card acc-reveal p-6 lg:col-span-2" style="animation-delay: 180ms">
+                  <h2 class="text-sm font-semibold uppercase tracking-[0.16em] text-white/40">Профиль</h2>
+
+                  <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <label class="flex-1">
+                      <span class="acc-field-label">Никнейм</span>
+                      <span class="acc-input-wrap">
+                        <Icon name="tabler:user" class="acc-input-icon" />
+                        <input type="text" class="acc-input" data-nick-input maxlength="24" />
+                      </span>
+                    </label>
+                    <button type="submit" form="nick-form" class="btn btn-ghost !px-5 !py-3 text-sm">Сохранить</button>
+                  </div>
+                  <p data-nick-note class="mt-2 hidden text-xs text-emerald-300">Никнейм обновлён.</p>
+
+                  <div class="mt-6 grid gap-2 sm:grid-cols-2">
+                    <div class="acc-row">
+                      <span class="text-white/45">Email</span>
+                      <span class="truncate font-medium text-white/85" data-user-email>—</span>
+                    </div>
+                    <div class="acc-row">
+                      <span class="text-white/45">Аккаунт создан</span>
+                      <span class="font-medium text-white/85" data-user-created>—</span>
+                    </div>
+                  </div>
+
+                  <form id="nick-form" data-nick-form data-astro-reload class="hidden"></form>
+                </article>
+
+                <!-- Sync -->
+                <article class="acc-card acc-reveal p-6" style="animation-delay: 240ms">
+                  <h2 class="text-sm font-semibold uppercase tracking-[0.16em] text-white/40">Синхронизация</h2>
+
+                  <div class="mt-4 space-y-1">
+                    {
+                      syncRows.map((row) => (
+                        <label class="acc-toggle-row">
+                          <span>
+                            <span class="block text-sm text-white/80">{row.label}</span>
+                            <span class="block text-[0.7rem] text-white/35">{row.hint}</span>
+                          </span>
+                          <span class="flex items-center">
+                            <input type="checkbox" data-sync={row.key} class="peer sr-only" checked />
+                            <span class="acc-switch" aria-hidden="true" />
+                          </span>
+                        </label>
+                      ))
+                    }
+                  </div>
+                </article>
+              </div>
+
+              <div class="mt-4 grid gap-4 lg:grid-cols-3">
+                <!-- Setup preview -->
+                <article
+                  class="acc-card acc-reveal relative overflow-hidden p-6 lg:col-span-2"
+                  style="animation-delay: 300ms"
+                >
+                  <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-semibold uppercase tracking-[0.16em] text-white/40">Мой сетап</h2>
+                    <span class="rounded-full bg-white/5 px-2.5 py-1 text-[0.65rem] text-white/45">3 пресета</span>
+                  </div>
+
+                  <div class="mt-4 grid gap-2 sm:grid-cols-3">
+                    {
+                      [
+                        { name: 'Amethyst Night', tone: 'from-violet-600/50 to-fuchsia-600/30', active: true },
+                        { name: 'PvP Clean', tone: 'from-sky-500/40 to-indigo-600/25', active: false },
+                        { name: 'Neon HUD', tone: 'from-fuchsia-500/40 to-rose-500/25', active: false },
+                      ].map((preset) => (
+                        <div
+                          class:list={[
+                            'rounded-xl border bg-gradient-to-br p-3 transition-transform duration-300 hover:-translate-y-0.5',
+                            preset.tone,
+                            preset.active ? 'border-violet-300/50' : 'border-white/10',
+                          ]}
+                        >
+                          <div class="flex items-center justify-between">
+                            <span class="text-xs font-medium text-white/90">{preset.name}</span>
+                            {preset.active && (
+                              <span class="rounded-full bg-white/15 px-2 py-0.5 text-[0.6rem] text-white">активен</span>
+                            )}
+                          </div>
+                          <div class="mt-6 space-y-1.5" aria-hidden="true">
+                            <div class="h-1.5 w-2/3 rounded-full bg-white/25" />
+                            <div class="h-1.5 w-1/2 rounded-full bg-white/15" />
+                          </div>
+                        </div>
+                      ))
+                    }
+                  </div>
+
+                  <p class="mt-4 text-xs text-white/35">
+                    Пресеты синхронизируются автоматически и доступны в лаунчере.
+                  </p>
+                </article>
+
+                <!-- Devices -->
+                <article class="acc-card acc-reveal p-6" style="animation-delay: 360ms">
+                  <h2 class="text-sm font-semibold uppercase tracking-[0.16em] text-white/40">Последние входы</h2>
+                  <ul class="mt-4 space-y-3 text-sm">
+                    <li class="flex items-center gap-3">
+                      <span class="acc-device"><Icon name="tabler:device-desktop" class="h-4 w-4" /></span>
+                      <span class="min-w-0 flex-1">
+                        <span class="block truncate text-white/85">Windows 11 · Chrome</span>
+                        <span class="block text-[0.7rem] text-white/35">это устройство</span>
+                      </span>
+                      <span class="text-[0.65rem] text-emerald-300">сейчас</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                      <span class="acc-device"><Icon name="tabler:device-gamepad-2" class="h-4 w-4" /></span>
+                      <span class="min-w-0 flex-1">
+                        <span class="block truncate text-white/85">Лаунчер · Windows</span>
+                        <span class="block text-[0.7rem] text-white/35">2 часа назад</span>
+                      </span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                      <span class="acc-device"><Icon name="tabler:brand-chrome" class="h-4 w-4" /></span>
+                      <span class="min-w-0 flex-1">
+                        <span class="block truncate text-white/85">Chrome · Android</span>
+                        <span class="block text-[0.7rem] text-white/35">вчера</span>
+                      </span>
+                    </li>
+                  </ul>
+                  <p class="mt-4 text-[0.68rem] leading-relaxed text-white/30">
+                    Демо-аккаунт хранится локально в браузере.
+                  </p>
+                </article>
+              </div>
+
+              <div
+                class="acc-reveal mt-4 flex flex-col items-start justify-between gap-4 rounded-2xl border border-violet-400/20 bg-gradient-to-r from-violet-600/15 via-transparent to-fuchsia-500/10 p-6 sm:flex-row sm:items-center"
+                style="animation-delay: 420ms"
+              >
+                <div>
+                  <h2 class="text-lg font-semibold text-white">Нужна помощь?</h2>
+                  <p class="text-sm text-white/50">Бот ответит сразу, а человек подключится при необходимости.</p>
+                </div>
+                <button type="button" data-open-chat class="btn btn-amethyst !px-6 !py-3 text-sm">
+                  <Icon name="tabler:message-circle" class="mr-2 h-4 w-4" />
+                  Открыть чат
+                </button>
+              </div>
+            </section>
+
+            <!-- Friends -->
+            <section data-acc-panel="friends" class="acc-panel" role="tabpanel" hidden>
+              <div class="grid gap-4 lg:grid-cols-3">
+                <article class="acc-card p-6 lg:col-span-2">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h2 class="text-lg font-semibold text-white">Друзья</h2>
+                      <p class="mt-0.5 text-sm text-white/45">
+                        <span data-friends-online>0</span> из <span data-friends-total>0</span> в сети
+                      </p>
+                    </div>
+                    <form class="flex w-full gap-2 sm:w-auto" data-friend-form data-astro-reload>
+                      <label class="sr-only" for="friend-nick">Никнейм друга</label>
+                      <span class="acc-input-wrap w-full sm:w-44">
+                        <Icon name="tabler:user-plus" class="acc-input-icon" />
+                        <input
+                          id="friend-nick"
+                          name="nickname"
+                          type="text"
+                          class="acc-input"
+                          placeholder="Никнейм"
+                          maxlength="16"
+                        />
+                      </span>
+                      <button type="submit" class="btn btn-amethyst shrink-0 !px-4 !py-2.5 text-xs">Добавить</button>
+                    </form>
+                  </div>
+
+                  <p data-friends-note class="acc-note mt-3 hidden"></p>
+
+                  <div class="mt-5 space-y-2" data-friend-list></div>
+
+                  <div
+                    class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-8 text-center"
+                    data-friends-empty
+                  >
+                    <span
+                      class="mx-auto inline-flex h-11 w-11 items-center justify-center rounded-full bg-violet-500/10 text-violet-300"
+                    >
+                      <Icon name="tabler:users" class="h-5 w-5" />
+                    </span>
+                    <p class="mt-3 text-sm font-medium text-white/70">Пока нет друзей</p>
+                    <p class="mt-1 text-xs text-white/35">Добавь игрока по нику — он появится в списке.</p>
+                  </div>
+
+                  <template data-friend-template>
+                    <div class="acc-friend" data-friend data-online="false">
+                      <span
+                        class="relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-sm font-bold text-white"
+                        data-friend-avatar
+                      >
+                        A
+                        <span
+                          class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0b0718] bg-white/25"
+                          data-friend-dot></span>
+                      </span>
+                      <div class="min-w-0 flex-1">
+                        <p class="truncate text-sm font-medium text-white/90" data-friend-name>Игрок</p>
+                        <p class="truncate text-[0.7rem] text-white/35" data-friend-status>не в сети</p>
+                      </div>
+                      <button type="button" class="acc-friend-action" data-friend-invite>Пригласить</button>
+                      <button type="button" class="acc-friend-remove" data-friend-remove aria-label="Удалить друга">
+                        <Icon name="tabler:x" class="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </template>
+                </article>
+
+                <article class="acc-card p-6">
+                  <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-white">Заявки</h2>
+                    <span
+                      class="hidden rounded-full bg-violet-500/15 px-2.5 py-1 text-[0.65rem] font-semibold text-violet-200"
+                      data-requests-badge>0</span
+                    >
+                  </div>
+
+                  <div class="mt-4 space-y-2" data-request-list></div>
+
+                  <div
+                    class="mt-4 rounded-xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-6 text-center"
+                    data-requests-empty
+                  >
+                    <p class="text-xs text-white/40">Новых заявок нет</p>
+                  </div>
+
+                  <p class="mt-4 text-[0.68rem] leading-relaxed text-white/30">
+                    Список друзей хранится только в этом браузере и не отправляется на сервер.
+                  </p>
+                </article>
+              </div>
+
+              <div class="acc-card mt-4 flex items-start gap-3 p-6">
+                <span class="acc-nav-icon"><Icon name="tabler:users-group" class="h-4 w-4" /></span>
+                <div>
+                  <h3 class="text-sm font-semibold text-white">Играйте вместе</h3>
+                  <p class="mt-1 text-xs leading-relaxed text-white/45">
+                    Приглашай друзей на сервер прямо из клиента — статус и режим подтянутся автоматически.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <!-- Configs -->
+            <section data-acc-panel="configs" class="acc-panel" role="tabpanel" hidden>
+              <article class="acc-card p-6">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 class="text-lg font-semibold text-white">Конфиги</h2>
+                    <p class="mt-0.5 text-sm text-white/45">Пресеты модулей, HUD и шейдеров</p>
+                  </div>
+                  <form class="flex w-full gap-2 sm:w-auto" data-config-form data-astro-reload>
+                    <label class="sr-only" for="config-name">Название конфига</label>
+                    <span class="acc-input-wrap w-full sm:w-48">
+                      <Icon name="tabler:folder-plus" class="acc-input-icon" />
+                      <input
+                        id="config-name"
+                        name="name"
+                        type="text"
+                        class="acc-input"
+                        placeholder="Название конфига"
+                        maxlength="24"
+                      />
+                    </span>
+                    <button type="submit" class="btn btn-amethyst shrink-0 !px-4 !py-2.5 text-xs">Создать</button>
+                  </form>
+                </div>
+
+                <p data-configs-note class="acc-note mt-3 hidden"></p>
+
+                <div class="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3" data-config-grid>
+                  {
+                    presets.map((preset) => (
+                      <article
+                        class:list={[
+                          'acc-preset group relative overflow-hidden rounded-xl border bg-gradient-to-br p-4',
+                          preset.tone,
+                          preset.active ? 'border-violet-300/50' : 'border-white/10',
+                        ]}
+                        data-preset
+                        data-name={preset.name}
+                        data-active={String(preset.active)}
+                      >
+                        <div class="flex items-start justify-between gap-2">
+                          <div>
+                            <p class="text-sm font-semibold text-white" data-preset-name>
+                              {preset.name}
+                            </p>
+                            <p class="mt-0.5 text-[0.68rem] text-white/45" data-preset-meta>
+                              {preset.meta}
+                            </p>
+                          </div>
+                          <span
+                            class:list={[
+                              'rounded-full bg-white/15 px-2 py-0.5 text-[0.6rem] font-semibold text-white',
+                              preset.active ? '' : 'hidden',
+                            ]}
+                            data-preset-badge
+                          >
+                            активен
+                          </span>
+                        </div>
+
+                        <div class="mt-6 space-y-1.5" aria-hidden="true">
+                          <div class="h-1.5 w-2/3 rounded-full bg-white/25" />
+                          <div class="h-1.5 w-1/2 rounded-full bg-white/15" />
+                          <div class="h-1.5 w-3/4 rounded-full bg-white/10" />
+                        </div>
+
+                        <div class="mt-4 flex gap-2">
+                          <button type="button" class="acc-mini-btn flex-1" data-preset-activate>
+                            Активировать
+                          </button>
+                          <button
+                            type="button"
+                            class="acc-mini-btn acc-mini-btn--icon"
+                            data-preset-download
+                            aria-label="Скачать конфиг"
+                          >
+                            <Icon name="tabler:download" class="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </article>
+                    ))
+                  }
+                </div>
+              </article>
+
+              <article
+                class="acc-card mt-4 flex flex-col items-start justify-between gap-4 p-6 sm:flex-row sm:items-center"
+              >
+                <div class="flex items-start gap-3">
+                  <span class="acc-nav-icon"><Icon name="tabler:cloud-download" class="h-4 w-4" /></span>
+                  <div>
+                    <h3 class="text-sm font-semibold text-white">Резервная копия</h3>
+                    <p class="mt-1 text-xs text-white/45">Скачай все конфиги одним JSON-файлом.</p>
+                  </div>
+                </div>
+                <button type="button" data-export-configs class="btn btn-ghost !px-5 !py-2.5 text-xs">
+                  Скачать всё
+                </button>
+              </article>
+            </section>
+
+            <!-- Events -->
+            <section data-acc-panel="events" class="acc-panel" role="tabpanel" hidden>
+              <article
+                class="relative overflow-hidden rounded-2xl border border-violet-400/25 bg-gradient-to-br from-violet-700/30 via-[#0b0718] to-fuchsia-700/20 p-6 md:p-8"
+              >
+                <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+                  <div class="absolute -right-16 -top-20 h-52 w-52 rounded-full bg-fuchsia-600/25 blur-3xl"></div>
+                  <div class="absolute -bottom-24 -left-16 h-52 w-52 rounded-full bg-violet-600/30 blur-3xl"></div>
+                </div>
+
+                <div class="relative flex flex-wrap items-start justify-between gap-6">
+                  <div>
+                    <span class="eyebrow">FunTime · Ближайший ивент</span>
+                    <div class="mt-3 flex flex-wrap items-center gap-3">
+                      <h2 class="text-2xl font-extrabold tracking-tight text-white md:text-3xl">Аирдроп</h2>
+                      <span
+                        class="rounded-full border border-amber-400/35 bg-amber-400/10 px-2.5 py-1 text-[0.62rem] font-bold uppercase tracking-[0.12em] text-amber-300"
+                        >Легендарный</span
+                      >
+                    </div>
+                    <p class="mt-2 max-w-md text-sm leading-relaxed text-white/55">
+                      Сундуки с лутом падают на спавн — первый забравший получает всё.
+                    </p>
+
+                    <div class="mt-4 flex flex-wrap gap-2 text-[0.7rem] text-white/60">
+                      <span
+                        class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5"
+                      >
+                        <Icon name="tabler:server" class="h-3.5 w-3.5 text-violet-300" />
+                        mc.funtime.su · Анархия
+                      </span>
+                      <span
+                        class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5"
+                      >
+                        <Icon name="tabler:clock" class="h-3.5 w-3.5 text-violet-300" />
+                        Старт через 12 мин
+                      </span>
+                      <span
+                        class="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5"
+                      >
+                        <Icon name="tabler:gift" class="h-3.5 w-3.5 text-violet-300" />
+                        Алмазы, незерит, кит
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="text-left sm:text-right">
+                    <p class="text-[0.65rem] uppercase tracking-[0.18em] text-white/35">До старта</p>
+                    <p class="gradient-text mt-1 font-mono text-4xl font-extrabold" data-countdown="12">12:00</p>
+                  </div>
+                </div>
+
+                <div class="relative mt-6 flex flex-wrap gap-2">
+                  <button type="button" class="btn btn-amethyst !px-5 !py-2.5 text-xs" data-event-remind>
+                    <Icon name="tabler:bell" class="mr-2 h-3.5 w-3.5" data-remind-icon />
+                    <span data-remind-label>Напомнить</span>
+                  </button>
+                  <a
+                    href="https://funtime.me/events"
+                    target="_blank"
+                    rel="noopener"
+                    class="btn btn-ghost !px-5 !py-2.5 text-xs"
+                  >
+                    Все ивенты FunTime ↗
+                  </a>
+                </div>
+              </article>
+
+              <article class="acc-card mt-4 p-6">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 class="text-lg font-semibold text-white">Расписание</h2>
+                    <p class="mt-0.5 text-sm text-white/45">Ивенты на серверах FunTime</p>
+                  </div>
+                  <div class="flex flex-wrap gap-1.5" data-event-filters>
+                    {
+                      eventFilters.map((filter) => (
+                        <button
+                          type="button"
+                          class="acc-filter"
+                          data-event-filter={filter.value}
+                          data-active={filter.value === 'all' ? 'true' : 'false'}
+                        >
+                          {filter.label}
+                        </button>
+                      ))
+                    }
+                  </div>
+                </div>
+
+                <div class="mt-5 grid gap-3 sm:grid-cols-2" data-event-grid>
+                  {
+                    ftEvents.map((event) => (
+                      <article class="acc-event" data-event data-cat={event.cat}>
+                        <div class="flex items-start justify-between gap-3">
+                          <span class:list={['acc-event-icon bg-gradient-to-br', event.tone]}>
+                            <Icon name={event.icon} class="h-4 w-4 text-white/85" />
+                          </span>
+                          <span
+                            class:list={[
+                              'rounded-full border px-2 py-0.5 text-[0.6rem] font-semibold uppercase tracking-[0.1em]',
+                              event.rarityClass,
+                            ]}
+                          >
+                            {event.rarity}
+                          </span>
+                        </div>
+
+                        <h3 class="mt-3 text-sm font-semibold text-white">{event.name}</h3>
+                        <p class="mt-1 text-xs leading-relaxed text-white/45">{event.desc}</p>
+
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 text-[0.68rem] text-white/40">
+                          <span class="inline-flex items-center gap-1">
+                            <Icon name="tabler:clock" class="h-3.5 w-3.5" />
+                            {event.time}
+                          </span>
+                          <span class="inline-flex items-center gap-1">
+                            <Icon name="tabler:server" class="h-3.5 w-3.5" />
+                            {event.server}
+                          </span>
+                        </div>
+
+                        <div class="mt-2 flex items-center gap-1.5 text-[0.68rem] text-violet-200/80">
+                          <Icon name="tabler:gift" class="h-3.5 w-3.5" />
+                          {event.reward}
+                        </div>
+                      </article>
+                    ))
+                  }
+                </div>
+
+                <p class="mt-4 text-[0.68rem] leading-relaxed text-white/30">
+                  Типы ивентов вдохновлены FunTime.me. Актуальное расписание — на
+                  <a
+                    href="https://funtime.me/events"
+                    target="_blank"
+                    rel="noopener"
+                    class="text-violet-300 hover:text-violet-200">funtime.me/events</a
+                  >.
+                </p>
+              </article>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script is:inline>
+    try {
+      if (localStorage.getItem('amethyst:session')) {
+        document.querySelectorAll('[data-view="guest"]').forEach((element) => {
+          element.hidden = true;
+        });
+      }
+    } catch {
+      /* localStorage can be unavailable in private mode */
+    }
+  </script>
+</PageLayout>
+
+<style>
+  .acc-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.5;
+    animation: acc-drift 26s ease-in-out infinite alternate;
+  }
+
+  .acc-blob--violet {
+    top: -14rem;
+    left: -10rem;
+    width: 34rem;
+    height: 34rem;
+    background: radial-gradient(circle at 40% 40%, rgb(139 92 246 / 55%), transparent 70%);
+  }
+
+  .acc-blob--fuchsia {
+    top: -8rem;
+    right: -12rem;
+    width: 30rem;
+    height: 30rem;
+    background: radial-gradient(circle at 50% 50%, rgb(217 70 239 / 35%), transparent 72%);
+    animation-duration: 34s;
+    animation-delay: -12s;
+  }
+
+  @keyframes acc-drift {
+    0% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    100% {
+      transform: translate3d(2.5rem, 2rem, 0) scale(1.07);
+    }
+  }
+
+  .acc-card {
+    border-radius: 1.5rem;
+    border: 1px solid rgb(196 181 253 / 12%);
+    background:
+      linear-gradient(160deg, rgb(255 255 255 / 5%), rgb(255 255 255 / 1.5%)),
+      radial-gradient(120% 120% at 0% 0%, rgb(139 92 246 / 10%), transparent 60%);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 30px 80px -60px rgb(139 92 246 / 80%);
+  }
+
+  .acc-aside {
+    border: 1px solid rgb(196 181 253 / 16%);
+    background:
+      radial-gradient(120% 100% at 10% 0%, rgb(139 92 246 / 22%), transparent 55%),
+      radial-gradient(100% 100% at 100% 100%, rgb(217 70 239 / 14%), transparent 60%), rgb(11 7 24 / 80%);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+
+  .acc-reveal {
+    animation: acc-in 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  @keyframes acc-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* ── Tabs ─────────────────────────────────────────────────────────── */
+  .auth-tabs {
+    background-color: rgb(255 255 255 / 4%);
+  }
+
+  .auth-tab-indicator {
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 4px;
+    width: calc(50% - 4px);
+    border-radius: 0.5rem;
+    background: linear-gradient(120deg, rgb(139 92 246 / 55%), rgb(192 38 211 / 35%));
+    box-shadow:
+      inset 0 0 0 1px rgb(192 132 252 / 35%),
+      0 10px 26px -14px rgb(139 92 246 / 80%);
+    transition: transform 0.38s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .auth-tabs[data-mode='register'] .auth-tab-indicator {
+    transform: translateX(100%);
+  }
+
+  .auth-tab {
+    position: relative;
+    z-index: 1;
+    border-radius: 0.5rem;
+    padding: 0.55rem 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgb(255 255 255 / 55%);
+    transition: color 0.25s ease;
+  }
+
+  .auth-tab:hover {
+    color: rgb(255 255 255 / 85%);
+  }
+
+  .auth-tab[data-active='true'] {
+    color: #fff;
+  }
+
+  /* ── Forms ────────────────────────────────────────────────────────── */
+  .auth-form-in {
+    animation: form-in 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  @keyframes form-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .acc-field {
+    display: block;
+  }
+
+  .acc-field-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: rgb(255 255 255 / 55%);
+  }
+
+  .acc-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(255 255 255 / 10%);
+    background-color: rgb(255 255 255 / 4%);
+    padding: 0 0.9rem;
+    transition:
+      border-color 0.25s ease,
+      background-color 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .acc-input-wrap:focus-within {
+    border-color: rgb(192 132 252 / 60%);
+    background-color: rgb(255 255 255 / 6%);
+    box-shadow: 0 0 0 3px rgb(139 92 246 / 18%);
+  }
+
+  .acc-input-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    color: rgb(255 255 255 / 30%);
+    transition: color 0.25s ease;
+  }
+
+  .acc-input-wrap:focus-within .acc-input-icon {
+    color: #c4b5fd;
+  }
+
+  .acc-input {
+    min-width: 0;
+    flex: 1;
+    background: transparent;
+    padding: 0.72rem 0;
+    font-size: 0.875rem;
+    color: #fff;
+    outline: none;
+  }
+
+  .acc-input::placeholder {
+    color: rgb(255 255 255 / 28%);
+  }
+
+  .acc-eye {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    padding: 0.35rem;
+    color: rgb(255 255 255 / 35%);
+    transition:
+      color 0.2s ease,
+      background-color 0.2s ease;
+  }
+
+  .acc-eye:hover {
+    color: #fff;
+    background-color: rgb(255 255 255 / 8%);
+  }
+
+  .acc-checkbox {
+    appearance: none;
+    position: relative;
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    cursor: pointer;
+    border-radius: 0.3rem;
+    border: 1px solid rgb(255 255 255 / 22%);
+    background-color: rgb(255 255 255 / 4%);
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .acc-checkbox:checked {
+    border-color: transparent;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+  }
+
+  .acc-checkbox:checked::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 1.5px;
+    width: 4px;
+    height: 8px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  .acc-checkbox:focus-visible {
+    outline: 2px solid rgb(192 132 252 / 70%);
+    outline-offset: 2px;
+  }
+
+  /* ── Dashboard bits ───────────────────────────────────────────────── */
+  .acc-avatar {
+    position: relative;
+    display: inline-flex;
+    width: 4rem;
+    height: 4rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #7c3aed, #c026d3);
+    font-size: 1.55rem;
+    font-weight: 800;
+    color: #fff;
+    box-shadow:
+      0 0 0 4px rgb(139 92 246 / 15%),
+      0 18px 42px -18px rgb(139 92 246 / 90%);
+  }
+
+  .acc-avatar::after {
+    content: '';
+    position: absolute;
+    inset: -7px;
+    border-radius: inherit;
+    border: 1px dashed rgb(196 181 253 / 35%);
+    animation: acc-spin 26s linear infinite;
+  }
+
+  @keyframes acc-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .acc-orbit {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(15rem, 92%);
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 1px dashed rgb(196 181 253 / 30%);
+    animation: acc-spin-centered 44s linear infinite;
+  }
+
+  .acc-orbit::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background-color: #c084fc;
+    box-shadow: 0 0 12px 2px rgb(192 132 252 / 70%);
+  }
+
+  @keyframes acc-spin-centered {
+    from {
+      transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+
+  .acc-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-radius: 0.65rem;
+    background-color: rgb(255 255 255 / 4%);
+    padding: 0.65rem 0.85rem;
+    font-size: 0.8rem;
+  }
+
+  .acc-toggle-row {
+    display: flex;
+    cursor: pointer;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-radius: 0.75rem;
+    padding: 0.55rem 0.35rem;
+    transition: background-color 0.2s ease;
+  }
+
+  .acc-toggle-row:hover {
+    background-color: rgb(255 255 255 / 3%);
+  }
+
+  .acc-switch {
+    position: relative;
+    width: 2.5rem;
+    height: 1.35rem;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    border: 1px solid rgb(255 255 255 / 8%);
+    background-color: rgb(255 255 255 / 12%);
+    transition:
+      background 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .acc-switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 1rem;
+    height: 1rem;
+    border-radius: 50%;
+    background-color: #fff;
+    transition: transform 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .peer:checked + .acc-switch {
+    background: linear-gradient(120deg, #7c3aed, #c026d3);
+    box-shadow: 0 0 18px -4px rgb(168 85 247 / 80%);
+  }
+
+  .peer:checked + .acc-switch::after {
+    transform: translateX(1.15rem);
+  }
+
+  .peer:focus-visible + .acc-switch {
+    outline: 2px solid rgb(192 132 252 / 70%);
+    outline-offset: 3px;
+  }
+
+  .acc-device {
+    display: inline-flex;
+    height: 2.25rem;
+    width: 2.25rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.65rem;
+    border: 1px solid rgb(255 255 255 / 8%);
+    background-color: rgb(255 255 255 / 4%);
+    color: rgb(255 255 255 / 55%);
+  }
+
+  /* ── Dashboard navigation ─────────────────────────────────────────── */
+  .acc-nav-item {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.65rem;
+    border-radius: 0.8rem;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: rgb(255 255 255 / 55%);
+    white-space: nowrap;
+    transition:
+      background-color 0.25s ease,
+      color 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .acc-nav-item:hover {
+    background-color: rgb(255 255 255 / 5%);
+    color: rgb(255 255 255 / 90%);
+  }
+
+  .acc-nav-item[data-active='true'] {
+    background: linear-gradient(100deg, rgb(139 92 246 / 26%), rgb(192 38 211 / 10%));
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgb(192 132 252 / 25%);
+  }
+
+  .acc-nav-icon {
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.6rem;
+    border: 1px solid rgb(255 255 255 / 8%);
+    background-color: rgb(255 255 255 / 4%);
+    color: rgb(255 255 255 / 55%);
+    transition:
+      background 0.25s ease,
+      color 0.25s ease,
+      box-shadow 0.25s ease;
+  }
+
+  .acc-nav-item[data-active='true'] .acc-nav-icon {
+    border-color: transparent;
+    background: linear-gradient(135deg, #7c3aed, #c026d3);
+    color: #fff;
+    box-shadow: 0 8px 20px -10px rgb(139 92 246 / 90%);
+  }
+
+  .acc-nav-badge {
+    border-radius: 999px;
+    background-color: rgb(255 255 255 / 8%);
+    padding: 0.05rem 0.45rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: rgb(255 255 255 / 60%);
+  }
+
+  .acc-nav-item[data-active='true'] .acc-nav-badge {
+    background-color: rgb(255 255 255 / 16%);
+    color: #fff;
+  }
+
+  .acc-nav-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 999px;
+    border: 1px solid rgb(52 211 153 / 25%);
+    background-color: rgb(52 211 153 / 10%);
+    padding: 0.05rem 0.45rem;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: rgb(110 231 183);
+  }
+
+  .acc-nav-live::before {
+    content: '';
+    width: 0.3rem;
+    height: 0.3rem;
+    border-radius: 999px;
+    background-color: currentColor;
+    box-shadow: 0 0 0 0 rgb(52 211 153 / 60%);
+    animation: acc-pulse 2s ease-out infinite;
+  }
+
+  @keyframes acc-pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgb(52 211 153 / 55%);
+    }
+    70%,
+    100% {
+      box-shadow: 0 0 0 0.35rem rgb(52 211 153 / 0%);
+    }
+  }
+
+  .acc-panel-in {
+    animation: acc-panel-in 0.4s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  @keyframes acc-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  /* ── Friends ──────────────────────────────────────────────────────── */
+  .acc-friend {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: 0.85rem;
+    border: 1px solid rgb(255 255 255 / 6%);
+    background-color: rgb(255 255 255 / 3%);
+    padding: 0.6rem 0.75rem;
+    transition:
+      border-color 0.25s ease,
+      background-color 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .acc-friend:hover {
+    border-color: rgb(192 132 252 / 30%);
+    background-color: rgb(255 255 255 / 5%);
+    transform: translateX(2px);
+  }
+
+  .acc-friend-action {
+    flex-shrink: 0;
+    border-radius: 0.6rem;
+    border: 1px solid rgb(196 181 253 / 22%);
+    background-color: rgb(139 92 246 / 14%);
+    padding: 0.4rem 0.7rem;
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: #ddd6fe;
+    transition:
+      background-color 0.25s ease,
+      border-color 0.25s ease,
+      color 0.25s ease;
+  }
+
+  .acc-friend-action:hover {
+    border-color: rgb(196 181 253 / 40%);
+    background-color: rgb(139 92 246 / 28%);
+    color: #fff;
+  }
+
+  .acc-friend-action:disabled {
+    opacity: 0.6;
+  }
+
+  .acc-friend-remove {
+    display: inline-flex;
+    width: 1.8rem;
+    height: 1.8rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    color: rgb(255 255 255 / 30%);
+    transition:
+      background-color 0.25s ease,
+      color 0.25s ease;
+  }
+
+  .acc-friend-remove:hover {
+    background-color: rgb(248 113 113 / 12%);
+    color: rgb(252 165 165);
+  }
+
+  /* ── Mini buttons / presets ───────────────────────────────────────── */
+  .acc-mini-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    border-radius: 0.6rem;
+    border: 1px solid rgb(255 255 255 / 10%);
+    background-color: rgb(0 0 0 / 20%);
+    padding: 0.45rem 0.65rem;
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: rgb(255 255 255 / 75%);
+    transition:
+      background-color 0.25s ease,
+      border-color 0.25s ease,
+      color 0.25s ease;
+  }
+
+  .acc-mini-btn:hover {
+    border-color: rgb(192 132 252 / 40%);
+    background-color: rgb(139 92 246 / 18%);
+    color: #fff;
+  }
+
+  .acc-mini-btn--icon {
+    width: 2.1rem;
+    flex-shrink: 0;
+    padding-inline: 0;
+  }
+
+  .acc-preset {
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+
+  .acc-preset::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(120deg, transparent 30%, rgb(255 255 255 / 9%) 50%, transparent 70%);
+    transform: translateX(-120%);
+    transition: transform 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .acc-preset:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 24px 50px -30px rgb(139 92 246 / 80%);
+  }
+
+  .acc-preset:hover::after {
+    transform: translateX(120%);
+  }
+
+  .acc-preset[data-active='true'] {
+    box-shadow:
+      inset 0 0 0 1px rgb(192 132 252 / 25%),
+      0 20px 40px -30px rgb(139 92 246 / 80%);
+  }
+
+  /* ── FunTime events ───────────────────────────────────────────────── */
+  .acc-event {
+    border-radius: 1rem;
+    border: 1px solid rgb(255 255 255 / 7%);
+    background: radial-gradient(120% 120% at 0% 0%, rgb(139 92 246 / 8%), transparent 55%), rgb(255 255 255 / 2.5%);
+    padding: 1rem;
+    transition:
+      transform 0.3s ease,
+      border-color 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+
+  .acc-event:hover {
+    transform: translateY(-3px);
+    border-color: rgb(192 132 252 / 28%);
+    box-shadow: 0 24px 50px -35px rgb(139 92 246 / 90%);
+  }
+
+  .acc-event[hidden] {
+    display: none;
+  }
+
+  .acc-event-icon {
+    display: inline-flex;
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.6rem;
+    border: 1px solid rgb(255 255 255 / 10%);
+  }
+
+  .acc-filter {
+    border-radius: 999px;
+    border: 1px solid rgb(255 255 255 / 8%);
+    padding: 0.3rem 0.7rem;
+    font-size: 0.68rem;
+    color: rgb(255 255 255 / 50%);
+    transition:
+      background-color 0.25s ease,
+      border-color 0.25s ease,
+      color 0.25s ease;
+  }
+
+  .acc-filter:hover {
+    border-color: rgb(192 132 252 / 30%);
+    color: #fff;
+  }
+
+  .acc-filter[data-active='true'] {
+    border-color: rgb(192 132 252 / 40%);
+    background-color: rgb(139 92 246 / 22%);
+    color: #fff;
+  }
+
+  .acc-note {
+    border-radius: 0.5rem;
+    border: 1px solid rgb(52 211 153 / 25%);
+    background-color: rgb(52 211 153 / 10%);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: rgb(110 231 183);
+  }
+
+  .acc-note[data-tone='error'] {
+    border-color: rgb(248 113 113 / 30%);
+    background-color: rgb(248 113 113 / 10%);
+    color: rgb(252 165 165);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .acc-reveal,
+    .auth-form-in,
+    .acc-blob,
+    .acc-avatar::after,
+    .acc-orbit,
+    .acc-panel-in,
+    .acc-nav-live::before {
+      animation: none;
+    }
+
+    .acc-preset,
+    .acc-preset::after,
+    .acc-event,
+    .acc-friend,
+    .acc-nav-item {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import { currentUser, loginUser, logout, registerUser, updateNickname, type StoredUser } from '~/scripts/auth-store';
+
+  type Mode = 'login' | 'register';
+
+  let guestView: HTMLElement | null = null;
+  let accountView: HTMLElement | null = null;
+  let tabsRoot: HTMLElement | null = null;
+  let loginForm: HTMLFormElement | null = null;
+  let registerForm: HTMLFormElement | null = null;
+  let titleEl: HTMLElement | null = null;
+  let subtitleEl: HTMLElement | null = null;
+  let errorEl: HTMLElement | null = null;
+  let noticeEl: HTMLElement | null = null;
+  let nickInput: HTMLInputElement | null = null;
+  let nickNote: HTMLElement | null = null;
+  let nickNoteTimer: number | undefined;
+
+  const PREF_PREFIX = 'amethyst:prefs:';
+
+  const pick = <T extends Element>(selector: string) => document.querySelector<T>(selector);
+
+  const clearMessages = () => {
+    errorEl?.classList.add('hidden');
+    noticeEl?.classList.add('hidden');
+    if (errorEl) errorEl.textContent = '';
+    if (noticeEl) noticeEl.textContent = '';
+  };
+
+  const showError = (message: string) => {
+    if (!errorEl) return;
+    if (noticeEl) noticeEl.classList.add('hidden');
+    errorEl.textContent = message;
+    errorEl.classList.remove('hidden');
+  };
+
+  const showNotice = (message: string) => {
+    if (!noticeEl) return;
+    if (errorEl) errorEl.classList.add('hidden');
+    noticeEl.textContent = message;
+    noticeEl.classList.remove('hidden');
+  };
+
+  const setMode = (mode: Mode) => {
+    if (!tabsRoot || !loginForm || !registerForm) return;
+
+    tabsRoot.dataset.mode = mode;
+    tabsRoot.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach((tab) => {
+      const active = tab.dataset.tab === mode;
+      tab.dataset.active = String(active);
+      tab.setAttribute('aria-selected', String(active));
+    });
+
+    const activeForm = mode === 'login' ? loginForm : registerForm;
+    const inactiveForm = mode === 'login' ? registerForm : loginForm;
+    inactiveForm.hidden = true;
+    activeForm.hidden = false;
+    activeForm.classList.remove('auth-form-in');
+    void activeForm.offsetWidth;
+    activeForm.classList.add('auth-form-in');
+
+    if (titleEl) titleEl.textContent = mode === 'login' ? 'С возвращением' : 'Создай свой Amethyst ID';
+    if (subtitleEl) {
+      subtitleEl.textContent =
+        mode === 'login'
+          ? 'Войди, чтобы забрать сетап на любое устройство.'
+          : 'Десять секунд — и косметика всегда с тобой.';
+    }
+
+    clearMessages();
+    activeForm.querySelector<HTMLInputElement>('input')?.focus({ preventScroll: true });
+  };
+
+  const readPrefs = (email: string): Record<string, boolean> => {
+    try {
+      return JSON.parse(localStorage.getItem(PREF_PREFIX + email) || '{}');
+    } catch {
+      return {};
+    }
+  };
+
+  const applyPrefs = (email: string) => {
+    const prefs = readPrefs(email);
+    document.querySelectorAll<HTMLInputElement>('[data-sync]').forEach((input) => {
+      input.checked = prefs[input.dataset.sync || ''] !== false;
+    });
+  };
+
+  /* ── Dashboard panels ─────────────────────────────────────────────── */
+  const PANELS = ['overview', 'friends', 'configs', 'events'] as const;
+  type Panel = (typeof PANELS)[number];
+
+  const PRESET_PREFIX = 'amethyst:preset:';
+  let countdownTimer: number | undefined;
+
+  const openPanel = (panel: Panel, updateHash = true) => {
+    const account = document.querySelector<HTMLElement>('[data-view="account"]');
+    if (!account) return;
+
+    account.querySelectorAll<HTMLElement>('[data-acc-tab]').forEach((tab) => {
+      const active = tab.dataset.accTab === panel;
+      tab.dataset.active = String(active);
+      tab.setAttribute('aria-selected', String(active));
+    });
+
+    account.querySelectorAll<HTMLElement>('[data-acc-panel]').forEach((section) => {
+      const active = section.dataset.accPanel === panel;
+      section.hidden = !active;
+      if (active) {
+        section.classList.remove('acc-panel-in');
+        void section.offsetWidth;
+        section.classList.add('acc-panel-in');
+      }
+    });
+
+    if (updateHash) {
+      const next = panel === 'overview' ? `${window.location.pathname}${window.location.search}` : `#${panel}`;
+      window.history.replaceState(null, '', next);
+    }
+  };
+
+  const setActivePreset = (name: string) => {
+    document.querySelectorAll<HTMLElement>('[data-preset]').forEach((card) => {
+      const active = card.dataset.name === name;
+      card.dataset.active = String(active);
+      card.classList.toggle('border-violet-300/50', active);
+      card.classList.toggle('border-white/10', !active);
+      card.querySelector<HTMLElement>('[data-preset-badge]')?.classList.toggle('hidden', !active);
+    });
+  };
+
+  const applyActivePreset = (email: string) => {
+    const stored = localStorage.getItem(PRESET_PREFIX + email);
+    if (stored) setActivePreset(stored);
+  };
+
+  const showPanelNote = (panel: 'friends' | 'configs', message: string, tone: 'ok' | 'error' = 'ok') => {
+    const note = document.querySelector<HTMLElement>(`[data-${panel}-note]`);
+    if (!note) return;
+    note.textContent = message;
+    note.dataset.tone = tone;
+    note.classList.remove('hidden');
+    window.setTimeout(() => note.classList.add('hidden'), 2800);
+  };
+
+  const updateFriendCounters = () => {
+    const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-friend]'));
+    const online = rows.filter((row) => row.dataset.online === 'true').length;
+
+    const onlineEl = document.querySelector<HTMLElement>('[data-friends-online]');
+    const totalEl = document.querySelector<HTMLElement>('[data-friends-total]');
+    const badgeEl = document.querySelector<HTMLElement>('[data-friends-badge]');
+    if (onlineEl) onlineEl.textContent = String(online);
+    if (totalEl) totalEl.textContent = String(rows.length);
+    if (badgeEl) badgeEl.textContent = String(online);
+
+    const requests = document.querySelectorAll('[data-request]').length;
+    const requestsBadge = document.querySelector<HTMLElement>('[data-requests-badge]');
+    if (requestsBadge) {
+      requestsBadge.textContent = String(requests);
+      requestsBadge.classList.toggle('hidden', requests === 0);
+    }
+
+    const friendsEmpty = document.querySelector<HTMLElement>('[data-friends-empty]');
+    if (friendsEmpty) friendsEmpty.hidden = rows.length > 0;
+
+    const requestsEmpty = document.querySelector<HTMLElement>('[data-requests-empty]');
+    if (requestsEmpty) requestsEmpty.hidden = requests > 0;
+  };
+
+  const addFriendRow = (nick: string, online = false) => {
+    const list = document.querySelector<HTMLElement>('[data-friend-list]');
+    const template = document.querySelector<HTMLTemplateElement>('[data-friend-template]');
+    const node = template?.content.firstElementChild?.cloneNode(true) as HTMLElement | null;
+    if (!list || !node) return;
+
+    const row = node;
+    row.dataset.online = String(online);
+
+    const avatar = row.querySelector<HTMLElement>('[data-friend-avatar]');
+    if (avatar) {
+      const dot = avatar.querySelector('[data-friend-dot]');
+      avatar.textContent = nick.slice(0, 1).toUpperCase();
+      if (dot) avatar.append(dot);
+    }
+
+    const dot = row.querySelector<HTMLElement>('[data-friend-dot]');
+    dot?.classList.toggle('bg-emerald-400', online);
+    dot?.classList.toggle('bg-white/25', !online);
+
+    const nameEl = row.querySelector<HTMLElement>('[data-friend-name]');
+    const statusEl = row.querySelector<HTMLElement>('[data-friend-status]');
+    if (nameEl) nameEl.textContent = nick;
+    if (statusEl) statusEl.textContent = online ? 'В сети · только что' : 'не в сети';
+
+    const invite = row.querySelector<HTMLButtonElement>('[data-friend-invite]');
+    if (invite) {
+      invite.textContent = 'Пригласить';
+      invite.disabled = false;
+    }
+
+    list.prepend(row);
+    updateFriendCounters();
+  };
+
+  const addPresetCard = (name: string) => {
+    const grid = document.querySelector<HTMLElement>('[data-config-grid]');
+    const cards = grid?.querySelectorAll<HTMLElement>('[data-preset]');
+    if (!grid || !cards || cards.length === 0) return;
+
+    const source = cards[Math.floor(Math.random() * cards.length)];
+    const card = source.cloneNode(true) as HTMLElement;
+    card.dataset.name = name;
+    card.dataset.active = 'false';
+    card.classList.remove('border-violet-300/50');
+    card.classList.add('border-white/10');
+
+    const nameEl = card.querySelector<HTMLElement>('[data-preset-name]');
+    const metaEl = card.querySelector<HTMLElement>('[data-preset-meta]');
+    if (nameEl) nameEl.textContent = name;
+    if (metaEl) metaEl.textContent = 'новый · 0 модулей';
+    card.querySelector<HTMLElement>('[data-preset-badge]')?.classList.add('hidden');
+
+    grid.prepend(card);
+
+    const badge = document.querySelector<HTMLElement>('[data-configs-badge]');
+    if (badge) badge.textContent = String(grid.querySelectorAll('[data-preset]').length);
+  };
+
+  const downloadJson = (filename: string, payload: unknown) => {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const startCountdown = () => {
+    const el = document.querySelector<HTMLElement>('[data-countdown]');
+    if (!el) return;
+
+    window.clearInterval(countdownTimer);
+    let remaining = Number(el.dataset.countdown || '12') * 60;
+
+    const render = () => {
+      const minutes = Math.floor(remaining / 60)
+        .toString()
+        .padStart(2, '0');
+      const seconds = (remaining % 60).toString().padStart(2, '0');
+      el.textContent = `${minutes}:${seconds}`;
+    };
+
+    render();
+    countdownTimer = window.setInterval(() => {
+      remaining = remaining > 0 ? remaining - 1 : 0;
+      render();
+      if (remaining === 0) window.clearInterval(countdownTimer);
+    }, 1000);
+  };
+
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString('ru-RU', { day: '2-digit', month: 'long', year: 'numeric' });
+
+  const showAccount = (user: StoredUser) => {
+    if (!guestView || !accountView) return;
+
+    guestView.hidden = true;
+    accountView.hidden = false;
+
+    document.querySelectorAll<HTMLElement>('[data-user-nick]').forEach((element) => {
+      element.textContent = user.nickname;
+    });
+    document.querySelectorAll<HTMLElement>('[data-user-email]').forEach((element) => {
+      element.textContent = user.email;
+    });
+    document.querySelectorAll<HTMLElement>('[data-user-created]').forEach((element) => {
+      element.textContent = formatDate(user.created);
+    });
+    document.querySelectorAll<HTMLElement>('[data-avatar]').forEach((element) => {
+      element.textContent = user.nickname.slice(0, 1).toUpperCase();
+    });
+
+    if (nickInput) nickInput.value = user.nickname;
+    applyPrefs(user.email);
+    applyActivePreset(user.email);
+
+    const hash = window.location.hash.replace('#', '');
+    const panel = PANELS.find((value) => value === hash);
+    openPanel(panel ?? 'overview', !panel);
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const showGuest = (mode: Mode = 'login') => {
+    if (!guestView || !accountView) return;
+    accountView.hidden = true;
+    guestView.hidden = false;
+    setMode(mode);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const init = () => {
+    guestView = pick<HTMLElement>('[data-view="guest"]');
+    if (!guestView) return;
+
+    accountView = pick<HTMLElement>('[data-view="account"]');
+    tabsRoot = pick<HTMLElement>('[data-auth-tabs]');
+    loginForm = pick<HTMLFormElement>('[data-form="login"]');
+    registerForm = pick<HTMLFormElement>('[data-form="register"]');
+    titleEl = pick<HTMLElement>('[data-auth-title]');
+    subtitleEl = pick<HTMLElement>('[data-auth-subtitle]');
+    errorEl = pick<HTMLElement>('[data-auth-error]');
+    noticeEl = pick<HTMLElement>('[data-auth-notice]');
+    nickInput = pick<HTMLInputElement>('[data-nick-input]');
+    nickNote = pick<HTMLElement>('[data-nick-note]');
+
+    const user = currentUser();
+    if (user) {
+      showAccount(user);
+      accountView?.querySelectorAll<HTMLElement>('.acc-reveal').forEach((element) => {
+        element.style.animation = 'none';
+        void element.offsetWidth;
+        element.style.animation = '';
+      });
+    } else {
+      guestView.hidden = false;
+      if (accountView) accountView.hidden = true;
+      setMode(window.location.hash === '#register' ? 'register' : 'login');
+    }
+
+    startCountdown();
+  };
+
+  /* ── Events (delegated so client-side navigation keeps working) ───── */
+  document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+
+    const navTab = target.closest<HTMLElement>('[data-acc-tab]');
+    if (navTab?.dataset.accTab && (PANELS as readonly string[]).includes(navTab.dataset.accTab)) {
+      event.preventDefault();
+      openPanel(navTab.dataset.accTab as Panel);
+      return;
+    }
+
+    const tab = target.closest<HTMLElement>('[data-tab]');
+    if (tab?.dataset.tab === 'login' || tab?.dataset.tab === 'register') {
+      event.preventDefault();
+      setMode(tab.dataset.tab);
+      return;
+    }
+
+    const eye = target.closest<HTMLElement>('[data-pass-toggle]');
+    if (eye) {
+      const input = eye.parentElement?.querySelector<HTMLInputElement>('input');
+      if (!input) return;
+      const isHidden = input.type === 'password';
+      input.type = isHidden ? 'text' : 'password';
+      eye.querySelector('.eye-open')?.classList.toggle('hidden', isHidden);
+      eye.querySelector('.eye-closed')?.classList.toggle('hidden', !isHidden);
+      eye.setAttribute('aria-label', isHidden ? 'Скрыть пароль' : 'Показать пароль');
+      return;
+    }
+
+    if (target.closest('[data-forgot]')) {
+      showNotice('В демо-версии восстановление пароля недоступно. Создай новый аккаунт или напиши в поддержку.');
+      return;
+    }
+
+    if (target.closest('[data-logout]')) {
+      logout();
+      nickNote?.classList.add('hidden');
+      showGuest('login');
+      return;
+    }
+
+    /* Friends */
+    const friendRemove = target.closest<HTMLElement>('[data-friend-remove]');
+    if (friendRemove) {
+      friendRemove.closest<HTMLElement>('[data-friend]')?.remove();
+      updateFriendCounters();
+      return;
+    }
+
+    const invite = target.closest<HTMLButtonElement>('[data-friend-invite]');
+    if (invite) {
+      invite.textContent = 'Отправлено';
+      invite.disabled = true;
+      window.setTimeout(() => {
+        invite.textContent = 'Пригласить';
+        invite.disabled = false;
+      }, 2400);
+      return;
+    }
+
+    const accept = target.closest<HTMLElement>('[data-request-accept]');
+    if (accept) {
+      const request = accept.closest<HTMLElement>('[data-request]');
+      const nick = request?.querySelector<HTMLElement>('[data-request-name]')?.textContent?.trim() || 'Игрок';
+      request?.remove();
+      addFriendRow(nick, true);
+      updateFriendCounters();
+      showPanelNote('friends', `${nick} добавлен в друзья.`);
+      return;
+    }
+
+    const decline = target.closest<HTMLElement>('[data-request-decline]');
+    if (decline) {
+      const request = decline.closest<HTMLElement>('[data-request]');
+      const nick = request?.querySelector<HTMLElement>('[data-request-name]')?.textContent?.trim() || 'Игрок';
+      request?.remove();
+      updateFriendCounters();
+      showPanelNote('friends', `Заявка от ${nick} отклонена.`);
+      return;
+    }
+
+    /* Configs */
+    const activate = target.closest<HTMLElement>('[data-preset-activate]');
+    if (activate) {
+      const card = activate.closest<HTMLElement>('[data-preset]');
+      const name = card?.dataset.name;
+      if (!name) return;
+      setActivePreset(name);
+      const user = currentUser();
+      if (user) localStorage.setItem(PRESET_PREFIX + user.email, name);
+      showPanelNote('configs', `Конфиг «${name}» активирован.`);
+      return;
+    }
+
+    const download = target.closest<HTMLElement>('[data-preset-download]');
+    if (download) {
+      const card = download.closest<HTMLElement>('[data-preset]');
+      const name = card?.dataset.name;
+      if (!name) return;
+      const meta = card?.querySelector<HTMLElement>('[data-preset-meta]')?.textContent?.trim() || '';
+      downloadJson(`${name.replace(/\s+/g, '-').toLowerCase()}.json`, {
+        preset: name,
+        meta,
+        modules: [],
+        exportedAt: new Date().toISOString(),
+      });
+      return;
+    }
+
+    if (target.closest('[data-export-configs]')) {
+      const presets = Array.from(document.querySelectorAll<HTMLElement>('[data-preset]')).map((card) => ({
+        name: card.dataset.name || 'preset',
+        meta: card.querySelector<HTMLElement>('[data-preset-meta]')?.textContent?.trim() || '',
+        active: card.dataset.active === 'true',
+      }));
+      downloadJson('amethyst-configs.json', { presets, exportedAt: new Date().toISOString() });
+      return;
+    }
+
+    /* FunTime events */
+    const filter = target.closest<HTMLElement>('[data-event-filter]');
+    if (filter) {
+      const value = filter.dataset.eventFilter || 'all';
+      document.querySelectorAll<HTMLElement>('[data-event-filter]').forEach((button) => {
+        button.dataset.active = String(button === filter);
+      });
+      document.querySelectorAll<HTMLElement>('[data-event]').forEach((card) => {
+        card.hidden = value !== 'all' && card.dataset.cat !== value;
+      });
+      return;
+    }
+
+    const remind = target.closest<HTMLButtonElement>('[data-event-remind]');
+    if (remind) {
+      const on = remind.dataset.on === 'true';
+      remind.dataset.on = String(!on);
+      const label = remind.querySelector<HTMLElement>('[data-remind-label]');
+      if (label) label.textContent = on ? 'Напомнить' : 'Напоминание включено';
+      return;
+    }
+  });
+
+  document.addEventListener('change', (event) => {
+    const input = event.target as HTMLInputElement | null;
+    if (!input?.matches('[data-sync]')) return;
+
+    const user = currentUser();
+    if (!user) return;
+
+    const prefs = readPrefs(user.email);
+    prefs[input.dataset.sync || ''] = input.checked;
+    localStorage.setItem(PREF_PREFIX + user.email, JSON.stringify(prefs));
+  });
+
+  document.addEventListener(
+    'submit',
+    async (event) => {
+      const form = event.target as HTMLFormElement | null;
+      if (!form) return;
+
+      if (form.matches('[data-form="login"]')) {
+        event.preventDefault();
+        clearMessages();
+        const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        if (submit) submit.disabled = true;
+
+        try {
+          const data = new FormData(form);
+          const user = await loginUser(String(data.get('email') || ''), String(data.get('password') || ''));
+          showAccount(user);
+        } catch (error) {
+          showError(error instanceof Error ? error.message : 'Не удалось войти.');
+        } finally {
+          if (submit) submit.disabled = false;
+        }
+        return;
+      }
+
+      if (form.matches('[data-form="register"]')) {
+        event.preventDefault();
+        clearMessages();
+        const submit = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+        const data = new FormData(form);
+
+        if (!data.get('terms')) {
+          showError('Подтверди согласие с условиями и политикой.');
+          return;
+        }
+
+        if (submit) submit.disabled = true;
+
+        try {
+          const user = await registerUser({
+            nickname: String(data.get('nickname') || ''),
+            email: String(data.get('email') || ''),
+            password: String(data.get('password') || ''),
+          });
+          showAccount(user);
+        } catch (error) {
+          showError(error instanceof Error ? error.message : 'Не удалось создать аккаунт.');
+        } finally {
+          if (submit) submit.disabled = false;
+        }
+        return;
+      }
+
+      if (form.matches('[data-friend-form]')) {
+        event.preventDefault();
+        const input = form.querySelector<HTMLInputElement>('input[name="nickname"]');
+        const nick = input?.value.trim() || '';
+        if (nick.length < 3) {
+          showPanelNote('friends', 'Никнейм должен быть от 3 до 16 символов.', 'error');
+          return;
+        }
+        addFriendRow(nick);
+        if (input) input.value = '';
+        showPanelNote('friends', `${nick} добавлен в друзья.`);
+        return;
+      }
+
+      if (form.matches('[data-config-form]')) {
+        event.preventDefault();
+        const input = form.querySelector<HTMLInputElement>('input[name="name"]');
+        const name = input?.value.trim() || '';
+        if (name.length < 2) {
+          showPanelNote('configs', 'Введи название конфига.', 'error');
+          return;
+        }
+        addPresetCard(name);
+        if (input) input.value = '';
+        showPanelNote('configs', `Конфиг «${name}» создан.`);
+        return;
+      }
+
+      if (form.matches('[data-nick-form]')) {
+        event.preventDefault();
+        const user = currentUser();
+        if (!user || !nickInput) return;
+
+        try {
+          const updated = updateNickname(user.email, nickInput.value);
+          document.querySelectorAll<HTMLElement>('[data-user-nick]').forEach((element) => {
+            element.textContent = updated.nickname;
+          });
+          document.querySelectorAll<HTMLElement>('[data-avatar]').forEach((element) => {
+            element.textContent = updated.nickname.slice(0, 1).toUpperCase();
+          });
+          if (nickNote) {
+            nickNote.textContent = 'Никнейм обновлён.';
+            nickNote.classList.remove('text-red-300');
+            nickNote.classList.add('text-emerald-300');
+            nickNote.classList.remove('hidden');
+            window.clearTimeout(nickNoteTimer);
+            nickNoteTimer = window.setTimeout(() => nickNote?.classList.add('hidden'), 2600);
+          }
+        } catch (error) {
+          if (nickNote) {
+            nickNote.textContent = error instanceof Error ? error.message : 'Не удалось сохранить.';
+            nickNote.classList.remove('hidden');
+            nickNote.classList.remove('text-emerald-300');
+            nickNote.classList.add('text-red-300');
+            window.clearTimeout(nickNoteTimer);
+            nickNoteTimer = window.setTimeout(() => nickNote?.classList.add('hidden'), 3000);
+          }
+        }
+      }
+    },
+    // Capture phase: run before Astro's client router submit hook so it sees
+    // `defaultPrevented` and never turns a login into a GET navigation.
+    true
+  );
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

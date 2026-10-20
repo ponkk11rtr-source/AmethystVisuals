@@ -1,0 +1,19 @@
+---
+import { Image } from 'astro:assets';
+import { SITE } from 'astrowind:config';
+
+import crystal from '~/assets/images/amethyst-crystal.png';
+---
+
+<span
+  class="self-center ml-2 rtl:ml-0 rtl:mr-2 inline-flex items-center gap-2 text-2xl md:text-xl font-bold text-gray-900 whitespace-nowrap dark:text-white"
+>
+  <Image
+    src={crystal}
+    alt=""
+    width={32}
+    height={32}
+    class="h-8 w-8 md:h-7 md:w-7 shrink-0 drop-shadow-[0_0_10px_rgba(139,92,246,0.55)]"
+  />
+  {SITE?.name}
+</span>

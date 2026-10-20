@@ -1,0 +1,23 @@
+---
+// Account entry point. Every `[data-account-trigger]` routes to the dedicated
+// /account page (use `data-account-trigger="register"` to open the sign-up tab)
+// and the header label/state stays in sync with the local session.
+---
+
+<script>
+  import { syncAccountTriggers } from '~/scripts/auth-store';
+
+  document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement | null;
+    const trigger = target?.closest<HTMLElement>('[data-account-trigger]');
+    if (!trigger) return;
+
+    event.preventDefault();
+    const mode = trigger.dataset.accountTrigger;
+    const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+    window.location.href = `${base}/account${mode === 'register' ? '#register' : ''}`;
+  });
+
+  syncAccountTriggers();
+  document.addEventListener('astro:page-load', syncAccountTriggers);
+</script>

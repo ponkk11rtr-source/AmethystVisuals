@@ -1,0 +1,461 @@
+---
+// Floating support chat with a rule-based bot. Purely client-side: swap
+// `answerFor` for a request to your backend / LLM endpoint when ready.
+---
+
+<div data-chat-root class="fixed bottom-5 right-5 z-[70] flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+  <section
+    data-chat-panel
+    class="hidden w-[calc(100vw-2.5rem)] max-w-[380px] overflow-hidden rounded-2xl border border-violet-400/20 bg-[#0b0718]/95 shadow-[0_40px_120px_-30px_rgba(139,92,246,0.7)] backdrop-blur-xl"
+    aria-label="Чат поддержки"
+  >
+    <header
+      class="flex items-center gap-3 border-b border-white/10 bg-gradient-to-r from-violet-600/25 to-fuchsia-500/10 px-4 py-3"
+    >
+      <span
+        class="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-violet-500/20 ring-1 ring-inset ring-violet-400/40"
+      >
+        <svg
+          class="h-5 w-5 text-violet-200"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          aria-hidden="true"
+        >
+          <path d="M21 12a8 8 0 0 1-8 8H7l-4 3v-7a8 8 0 0 1 8-8h2a8 8 0 0 1 8 4z"></path>
+        </svg>
+        <span class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0b0718] bg-emerald-400"
+        ></span>
+      </span>
+      <div class="min-w-0">
+        <p class="truncate text-sm font-semibold text-white">Поддержка AmethystVisuals</p>
+        <p class="text-[0.7rem] text-emerald-300/90">Бот онлайн · отвечает сразу</p>
+      </div>
+      <button
+        type="button"
+        data-chat-close
+        aria-label="Закрыть чат"
+        class="ml-auto rounded-lg p-2 text-white/60 transition hover:bg-white/10 hover:text-white"
+      >
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M6 6l12 12M18 6L6 18"></path>
+        </svg>
+      </button>
+    </header>
+
+    <div
+      data-chat-messages
+      class="chat-scroll flex h-[320px] flex-col gap-2.5 overflow-y-auto px-4 py-4 text-sm"
+      aria-live="polite"
+    >
+    </div>
+
+    <div data-chat-chips class="flex flex-wrap gap-2 border-t border-white/5 px-4 py-3">
+      <button type="button" class="chat-chip" data-chat-quick="Как установить лаунчер?">Как установить?</button>
+      <button type="button" class="chat-chip" data-chat-quick="Сколько стоит подписка?">Сколько стоит?</button>
+      <button type="button" class="chat-chip" data-chat-quick="Клиент не запускается">Не запускается</button>
+      <button type="button" class="chat-chip" data-chat-quick="Какие визуалы есть?">Визуалы</button>
+    </div>
+
+    <form data-chat-form class="flex items-center gap-2 border-t border-white/10 bg-white/[0.03] px-3 py-3">
+      <label class="sr-only" for="chat-input">Вопрос в поддержку</label>
+      <input
+        id="chat-input"
+        data-chat-input
+        type="text"
+        autocomplete="off"
+        placeholder="Напиши вопрос…"
+        class="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/30 outline-none transition focus:border-violet-400/60 focus:bg-white/[0.07] focus:ring-2 focus:ring-violet-500/25"
+      />
+      <button
+        type="submit"
+        aria-label="Отправить"
+        class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white transition hover:brightness-110 active:scale-95"
+      >
+        <svg
+          class="h-4 w-4 translate-x-px"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <path d="M4 12l16-8-6 8 6 8-16-8z"></path>
+        </svg>
+      </button>
+    </form>
+  </section>
+
+  <button
+    type="button"
+    data-chat-toggle
+    aria-label="Открыть чат поддержки"
+    aria-expanded="false"
+    class="chat-launcher group relative inline-flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-[0_18px_40px_-12px_rgba(139,92,246,0.9)] transition hover:scale-105 active:scale-95"
+  >
+    <span class="chat-ring absolute inset-0 rounded-full" aria-hidden="true"></span>
+    <svg
+      data-chat-icon-open
+      class="h-6 w-6"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.8"
+      aria-hidden="true"
+    >
+      <path d="M21 12a8 8 0 0 1-8 8H7l-4 3v-7a8 8 0 0 1 8-8h2a8 8 0 0 1 8 4z"></path>
+    </svg>
+    <svg
+      data-chat-icon-close
+      class="hidden h-6 w-6"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      aria-hidden="true"
+    >
+      <path d="M6 6l12 12M18 6L6 18"></path>
+    </svg>
+    <span
+      data-chat-badge
+      class="absolute -right-0.5 -top-0.5 hidden min-w-[1.25rem] rounded-full bg-rose-500 px-1.5 py-0.5 text-[0.65rem] font-bold text-white ring-2 ring-[#06040f]"
+      >1</span
+    >
+  </button>
+</div>
+
+<style>
+  .chat-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .chat-scroll::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background-color: rgb(139 92 246 / 45%);
+  }
+
+  .chat-ring {
+    border: 1px solid rgb(192 132 252 / 55%);
+    animation: chat-pulse 2.6s ease-out infinite;
+  }
+
+  @keyframes chat-pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.75;
+    }
+    70% {
+      transform: scale(1.55);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1.55);
+      opacity: 0;
+    }
+  }
+
+  .chat-chip {
+    border-radius: 9999px;
+    border: 1px solid rgb(196 181 253 / 18%);
+    background-color: rgb(139 92 246 / 10%);
+    padding: 0.3rem 0.7rem;
+    font-size: 0.72rem;
+    color: #ddd6fe;
+    transition:
+      background-color 0.25s ease,
+      border-color 0.25s ease,
+      transform 0.25s ease;
+  }
+
+  .chat-chip:hover {
+    background-color: rgb(139 92 246 / 22%);
+    border-color: rgb(192 132 252 / 45%);
+    transform: translateY(-1px);
+  }
+
+  .chat-bubble {
+    max-width: 88%;
+    border-radius: 1rem;
+    padding: 0.6rem 0.85rem;
+    line-height: 1.45;
+    white-space: pre-line;
+    animation: chat-in 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+
+  .chat-bubble--bot {
+    align-self: flex-start;
+    border: 1px solid rgb(196 181 253 / 14%);
+    border-bottom-left-radius: 0.35rem;
+    background-color: rgb(255 255 255 / 6%);
+    color: #ede9fe;
+  }
+
+  .chat-bubble--user {
+    align-self: flex-end;
+    border-bottom-right-radius: 0.35rem;
+    background-image: linear-gradient(120deg, #7c3aed, #a855f7);
+    color: #fff;
+  }
+
+  @keyframes chat-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .chat-typing span {
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    margin-right: 3px;
+    border-radius: 9999px;
+    background-color: #c4b5fd;
+    animation: chat-typing 1.1s infinite ease-in-out;
+  }
+
+  .chat-typing span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  .chat-typing span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  @keyframes chat-typing {
+    0%,
+    60%,
+    100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+    30% {
+      transform: translateY(-4px);
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .chat-ring,
+    .chat-bubble,
+    .chat-typing span {
+      animation: none;
+    }
+  }
+</style>
+
+<script>
+  type ChatMessage = { role: 'bot' | 'user'; text: string };
+
+  const STORAGE_KEY = 'amethyst:chat';
+  const MAX_MESSAGES = 60;
+
+  const knowledge: Array<{ keys: string[]; reply: string }> = [
+    {
+      keys: ['привет', 'здравств', 'хай', 'hello', 'hi ', 'добрый'],
+      reply:
+        'Привет! Я бот поддержки AmethystVisuals 👋\nМогу помочь с установкой, тарифами, визуалами и ошибками. С чего начнём?',
+    },
+    {
+      keys: ['установ', 'установк', 'скачать', 'лаунчер', 'поставить', 'download'],
+      reply:
+        'Установка занимает пару минут:\n1. Нажми «Скачать лаунчер» на сайте.\n2. Запусти установщик и выбери папку.\n3. Открой лаунчер и войди в аккаунт.\n4. Выбери версию Minecraft и нажми «Играть».\n\nЕсли антивирус ругается — добавь папку клиента в исключения.',
+    },
+    {
+      keys: ['цен', 'стоим', 'тариф', 'подписк', 'купить', 'оплат', 'сколько'],
+      reply:
+        'Тарифы:\n• Free — все базовые визуалы и HUD, навсегда.\n• 30 дней — 5 $: вся библиотека косметики и облачная синхронизация.\n• 3 месяца — 10 $: всё то же + ранний доступ к новинкам.\n\nОплата разовая, без автосписаний. Оформить можно в разделе «Тарифы».',
+    },
+    {
+      keys: ['не запуск', 'ошибк', 'краш', 'вылет', 'лаг', 'падает', 'crash', 'зависа'],
+      reply:
+        'Давай по шагам:\n1. Убедись, что установлена Java 17+.\n2. Запусти лаунчер от имени администратора.\n3. Удали папку cache внутри клиента и попробуй снова.\n4. Проверь, что антивирус не блокирует файлы.\n\nЕсли не помогло — напиши версию клиента и текст ошибки, я подскажу дальше.',
+    },
+    {
+      keys: ['мод', 'визуал', 'косметик', 'кап', 'скин', 'hud', 'функци'],
+      reply:
+        'В клиенте 100+ визуальных модулей: капы и крылья, полные скины, кастомный HUD, минимапа, анимации рук, шейдеры, трекер сундуков и медиаплеер. Всё настраивается отдельно и сохраняется в пресеты.',
+    },
+    {
+      keys: ['аккаунт', 'регистрац', 'вход', 'парол', 'войти', 'зарегистр'],
+      reply:
+        'Аккаунт создаётся за 10 секунд: нажми «Войти» в шапке сайта и выбери «Регистрация». Укажи никнейм, email и пароль.\n\nАккаунт нужен для синхронизации настроек, косметики и списка друзей между устройствами.',
+    },
+    {
+      keys: ['верси', '1.8', '1.16', '1.20', '1.21', 'поддержк верс'],
+      reply:
+        'Поддерживаем Minecraft 1.8.9–1.21.x, включая популярные сборки для PvP. Версию можно переключить прямо в лаунчере — настройки применяются автоматически.',
+    },
+    {
+      keys: ['fps', 'производ', 'оптимиз', 'тормоз'],
+      reply:
+        'Для максимального FPS: отключи тяжёлые шейдеры, уменьши дальность прорисовки, выключи анимированные капы и включи режим «Performance» в настройках клиента. На слабых ПК это даёт +20–40 FPS.',
+    },
+    {
+      keys: ['оплат', 'карт', 'возврат', 'рефанд', 'деньг'],
+      reply:
+        'Оплата разовая и без автосписаний. Если покупка не применилась — напиши email аккаунта и дату платежа, передам запрос в биллинг. Возврат возможен в течение 14 дней, если клиент не запускался.',
+    },
+    {
+      keys: ['человек', 'оператор', 'админ', 'живая поддержк', 'менеджер'],
+      reply:
+        'Передал запрос живому оператору. Обычно отвечаем в течение 15–30 минут в рабочее время (10:00–22:00 МСК).\n\nПока ждёшь — можешь описать проблему подробнее: версия клиента, текст ошибки, что уже пробовал.',
+    },
+    {
+      keys: ['спасиб', 'благодар', 'круто', 'супер'],
+      reply: 'Рад помочь! Если появятся ещё вопросы — я тут 24/7 💜',
+    },
+  ];
+
+  function answerFor(text: string) {
+    const query = text.toLowerCase();
+    const hit = knowledge.find((item) => item.keys.some((key) => query.includes(key)));
+    if (hit) return hit.reply;
+    return 'Хм, не нашёл готового ответа. Уточни, пожалуйста: речь про установку, оплату, аккаунт или ошибку в игре?\n\nЕсли нужен человек — напиши «оператор», и я передам запрос в поддержку.';
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-chat-root]');
+  const panel = root?.querySelector<HTMLElement>('[data-chat-panel]');
+  const toggle = root?.querySelector<HTMLButtonElement>('[data-chat-toggle]');
+  const messagesEl = root?.querySelector<HTMLElement>('[data-chat-messages]');
+  const form = root?.querySelector<HTMLFormElement>('[data-chat-form]');
+  const input = root?.querySelector<HTMLInputElement>('[data-chat-input]');
+  const badge = root?.querySelector<HTMLElement>('[data-chat-badge]');
+  const chips = root?.querySelector<HTMLElement>('[data-chat-chips]');
+  const iconOpen = root?.querySelector<HTMLElement>('[data-chat-icon-open]');
+  const iconClose = root?.querySelector<HTMLElement>('[data-chat-icon-close]');
+
+  let messages: ChatMessage[] = [];
+  let unread = 0;
+  let open = false;
+
+  function load() {
+    try {
+      messages = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    } catch {
+      messages = [];
+    }
+    if (!messages.length) {
+      messages = [
+        {
+          role: 'bot',
+          text: 'Привет! Я бот поддержки AmethystVisuals 💜\nСпроси про установку, тарифы, визуалы или ошибки — отвечу сразу.',
+        },
+      ];
+    }
+  }
+
+  function persist() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-MAX_MESSAGES)));
+  }
+
+  function scrollToEnd() {
+    if (messagesEl) messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function renderMessage(message: ChatMessage) {
+    if (!messagesEl) return;
+    const bubble = document.createElement('div');
+    bubble.className = `chat-bubble ${message.role === 'bot' ? 'chat-bubble--bot' : 'chat-bubble--user'}`;
+    bubble.textContent = message.text;
+    messagesEl.appendChild(bubble);
+    scrollToEnd();
+  }
+
+  function renderAll() {
+    if (!messagesEl) return;
+    messagesEl.innerHTML = '';
+    messages.forEach(renderMessage);
+    scrollToEnd();
+  }
+
+  function setUnread(value: number) {
+    unread = Math.max(0, value);
+    if (!badge) return;
+    badge.textContent = String(unread);
+    badge.classList.toggle('hidden', unread === 0);
+  }
+
+  function showTyping() {
+    if (!messagesEl) return null;
+    const typing = document.createElement('div');
+    typing.className = 'chat-bubble chat-bubble--bot chat-typing';
+    typing.innerHTML = '<span></span><span></span><span></span>';
+    messagesEl.appendChild(typing);
+    scrollToEnd();
+    return typing;
+  }
+
+  function botReply(text: string) {
+    const typing = showTyping();
+    const delay = 500 + Math.min(1400, text.length * 12);
+    window.setTimeout(() => {
+      typing?.remove();
+      const reply: ChatMessage = { role: 'bot', text: answerFor(text) };
+      messages.push(reply);
+      persist();
+      renderMessage(reply);
+      if (!open) setUnread(unread + 1);
+    }, delay);
+  }
+
+  function send(text: string) {
+    const clean = text.trim();
+    if (!clean) return;
+    const message: ChatMessage = { role: 'user', text: clean };
+    messages.push(message);
+    persist();
+    renderMessage(message);
+    if (input) input.value = '';
+    if (chips) chips.classList.add('hidden');
+    botReply(clean);
+  }
+
+  function setOpen(next: boolean) {
+    open = next;
+    panel?.classList.toggle('hidden', !next);
+    iconOpen?.classList.toggle('hidden', next);
+    iconClose?.classList.toggle('hidden', !next);
+    toggle?.setAttribute('aria-expanded', String(next));
+    toggle?.setAttribute('aria-label', next ? 'Закрыть чат поддержки' : 'Открыть чат поддержки');
+    if (next) {
+      setUnread(0);
+      window.setTimeout(() => input?.focus(), 150);
+      scrollToEnd();
+    }
+  }
+
+  toggle?.addEventListener('click', () => setOpen(!open));
+  root?.querySelector('[data-chat-close]')?.addEventListener('click', () => setOpen(false));
+
+  document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement;
+    if (target.closest('[data-open-chat]') || target.closest('a[href="#support"]')) {
+      event.preventDefault();
+      setOpen(true);
+    }
+  });
+
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (input) send(input.value);
+  });
+
+  chips?.querySelectorAll<HTMLElement>('[data-chat-quick]').forEach((chip) => {
+    chip.addEventListener('click', () => send(chip.dataset.chatQuick || ''));
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && open) setOpen(false);
+  });
+
+  window.addEventListener('amethyst:open-chat', () => setOpen(true));
+
+  load();
+  renderAll();
+</script>

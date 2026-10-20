@@ -1,0 +1,21 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Демонстрация сайта (браузер)",
+      "detail": "Запускает dev-сервер Astro и открывает http://localhost:4321",
+      "type": "npm",
+      "script": "demo",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      }
+    }
+  ]
+}

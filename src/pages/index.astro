@@ -1,0 +1,700 @@
+---
+import PageLayout from '~/layouts/PageLayout.astro';
+import Button from '~/components/ui/Button.astro';
+
+import { Icon } from 'astro-icon/components';
+import { Image } from 'astro:assets';
+
+import crystal from '~/assets/images/amethyst-crystal.png';
+
+const metadata = {
+  title: 'AmethystVisuals — визуальный клиент для Minecraft',
+  description:
+    'AmethystVisuals — визуальный клиент для Minecraft: 100+ модулей, косметика, кастомный HUD и облачная синхронизация аккаунта.',
+  ignoreTitleTemplate: true,
+};
+
+const stats = [
+  { value: '100+', label: 'визуальных модулей' },
+  { value: '535', label: 'предметов косметики' },
+  { value: '12K+', label: 'игроков онлайн' },
+  { value: '24/7', label: 'поддержка в чате' },
+];
+
+const features = [
+  {
+    icon: 'tabler:palette',
+    title: 'Свои цвета и темы',
+    text: 'Каждый модуль открывается в отдельной панели: цвета, прозрачность, анимации и горячие клавиши. Любой набор сохраняется в пресет.',
+  },
+  {
+    icon: 'tabler:layout-dashboard',
+    title: 'HUD, который ты собираешь',
+    text: 'Ватремарк, зелья, кейбинды, миникарта, счёт очков, медиаплеер и FPS-графики — перетаскивай куда угодно или выключай.',
+  },
+  {
+    icon: 'tabler:sparkles',
+    title: 'Шейдеры, а не оверлеи',
+    text: 'Шлейфы за руками, свечение блоков, волны от прыжка и шейдерные капы работают на современном рендере — без просадок FPS.',
+  },
+  {
+    icon: 'tabler:users',
+    title: 'Друзья внутри клиента',
+    text: 'Добавляй друзей, смотри, кто онлайн, заходи на их сервер и делись конфигами прямо из клиента. Без сторонних приложений.',
+  },
+  {
+    icon: 'tabler:cloud',
+    title: 'Облачная синхронизация',
+    text: 'Косметика, настройки и раскладка HUD хранятся в аккаунте. Сел за новый ПК — вошёл и получил всё как было.',
+  },
+  {
+    icon: 'tabler:shield-check',
+    title: 'Только визуал',
+    text: 'Клиент не трогает прицел, дальность и движение. Меняется только внешний вид — честно и без риска блокировок.',
+  },
+];
+
+const showpieces = [
+  {
+    num: '/01',
+    title: 'Всё — настройка',
+    text: 'Одна панель на модуль, живые превью и сохранение собственных пресетов в один клик.',
+    gradient: 'from-violet-600/40 via-fuchsia-500/20 to-transparent',
+    accent: 'text-violet-200',
+    icon: 'tabler:adjustments-horizontal',
+  },
+  {
+    num: '/02',
+    title: 'HUD без компромиссов',
+    text: 'Пятнадцать элементов, которые двигаются мышью, меняют размер и тему. Или исчезают совсем.',
+    gradient: 'from-sky-500/35 via-violet-500/20 to-transparent',
+    accent: 'text-sky-200',
+    icon: 'tabler:layout-grid',
+  },
+  {
+    num: '/03',
+    title: 'Настоящие шейдеры',
+    text: 'Капы, шлейфы и подсветка блоков — GLSL-программы на новом пайплайне, посчитанные с бюджетом кадра.',
+    gradient: 'from-fuchsia-500/35 via-purple-500/20 to-transparent',
+    accent: 'text-fuchsia-200',
+    icon: 'tabler:wand',
+  },
+];
+
+const faqs = [
+  {
+    q: 'Как установить AmethystVisuals?',
+    a: 'Скачай лаунчер, запусти установщик и выбери папку. После установки открой лаунчер, войди в аккаунт, выбери версию Minecraft и нажми «Играть». Вся настройка занимает пару минут.',
+  },
+  {
+    q: 'Нужен ли аккаунт?',
+    a: 'Для игры — нет, клиент работает и без входа. Аккаунт нужен для облачной синхронизации косметики, конфигов, раскладки HUD и списка друзей между устройствами.',
+  },
+  {
+    q: 'Какие версии Minecraft поддерживаются?',
+    a: 'Minecraft 1.8.9–1.21.x, включая популярные PvP-сборки. Версия переключается прямо в лаунчере, настройки применяются автоматически.',
+  },
+  {
+    q: 'Это безопасно? Не забанят?',
+    a: 'Клиент меняет только визуальную часть: капы, HUD, шейдеры, анимации. Прицел, дальность и движение не затрагиваются, поэтому античиты не видят изменений.',
+  },
+  {
+    q: 'Что делать, если клиент не запускается?',
+    a: 'Проверь Java 17+, запусти лаунчер от администратора и добавь папку клиента в исключения антивируса. Если ошибка осталась — открой чат поддержки и пришли текст ошибки.',
+  },
+  {
+    q: 'Можно ли вернуть деньги?',
+    a: 'Да, в течение 14 дней после покупки, если клиент не запускался. Напиши в поддержку email аккаунта и дату платежа.',
+  },
+];
+
+const fadeClass = 'intersect-once intersect-quarter motion-safe:md:opacity-0 motion-safe:md:intersect:animate-fade';
+---
+
+<PageLayout metadata={metadata}>
+  <!-- Aurora background -->
+  <div class="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[1100px] overflow-hidden" aria-hidden="true">
+    <div class="hero-aurora">
+      <span class="hero-aurora__blob hero-aurora__blob--violet"></span>
+      <span class="hero-aurora__blob hero-aurora__blob--blue"></span>
+      <span class="hero-aurora__blob hero-aurora__blob--amethyst"></span>
+    </div>
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,transparent_20%,#06040f_78%)]"></div>
+  </div>
+
+  <!-- ══ HERO ══════════════════════════════════════════════════════════ -->
+  <section id="top" class="relative overflow-hidden pt-32 pb-16 md:pt-40 md:pb-24">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6">
+      <div class="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8">
+        <div class="text-center lg:text-left">
+          <span class="eyebrow">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+            Сезон 2026 · 100+ модулей
+          </span>
+
+          <h1 class="mt-6 text-5xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
+            Визуальный клиент<br class="hidden sm:block" />
+            для <span class="gradient-text">Minecraft</span>
+          </h1>
+
+          <p class="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-white/60 lg:mx-0">
+            Устал видеть сырость? Один клиент изменит твой Minecraft раз и навсегда. 100+ визуальных и утилит-функций.
+            Смотри на Minecraft по-другому.
+          </p>
+
+          <div class="mt-9 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
+            <Button
+              variant="amethyst"
+              text="Скачать лаунчер"
+              href="#download"
+              icon="tabler:download"
+              class="w-full !px-7 !py-4 text-base sm:w-auto"
+            />
+            <Button
+              variant="ghost"
+              text="Смотреть возможности"
+              href="#features"
+              icon="tabler:arrow-down"
+              class="w-full !px-7 !py-4 text-base sm:w-auto"
+            />
+          </div>
+
+          <div
+            class="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-white/40 lg:justify-start"
+          >
+            <span class="inline-flex items-center gap-1.5"
+              ><Icon name="tabler:device-desktop" class="h-4 w-4" /> Windows 10/11</span
+            >
+            <span class="inline-flex items-center gap-1.5"
+              ><Icon name="tabler:refresh" class="h-4 w-4" /> Обновления бесплатно</span
+            >
+            <span class="inline-flex items-center gap-1.5"
+              ><Icon name="tabler:lock" class="h-4 w-4" /> Без риска блокировок</span
+            >
+          </div>
+        </div>
+
+        <div class="relative mx-auto w-full max-w-md lg:max-w-none">
+          <div class="absolute inset-0 -z-10 animate-glow rounded-full bg-violet-600/25 blur-3xl" aria-hidden="true">
+          </div>
+          <Image
+            src={crystal}
+            alt="Кристалл AmethystVisuals"
+            width={512}
+            height={512}
+            loading="eager"
+            fetchpriority="high"
+            class="mx-auto w-full max-w-[420px] animate-float drop-shadow-[0_30px_80px_rgba(139,92,246,0.45)]"
+          />
+
+          <div
+            class="card-glass absolute left-0 top-8 hidden items-center gap-2 px-3 py-2 text-xs text-white/70 sm:flex"
+          >
+            <Icon name="tabler:cloud-check" class="h-4 w-4 text-emerald-300" />
+            Синхронизация включена
+          </div>
+          <div
+            class="card-glass absolute bottom-10 right-0 hidden items-center gap-2 px-3 py-2 text-xs text-white/70 sm:flex"
+          >
+            <Icon name="tabler:sparkles" class="h-4 w-4 text-fuchsia-300" />
+            535 косметических предметов
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <dl
+        class:list={[
+          'mt-16 grid grid-cols-2 gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md sm:mt-20 md:grid-cols-4 md:gap-0 md:p-0',
+          fadeClass,
+        ]}
+      >
+        {
+          stats.map((stat, index) => (
+            <div class:list={['px-4 py-5 text-center md:py-7', index !== 0 && 'md:border-l md:border-white/10']}>
+              <dt class="sr-only">{stat.label}</dt>
+              <dd class="text-3xl font-extrabold gradient-text md:text-4xl">{stat.value}</dd>
+              <dd class="mt-1 text-xs uppercase tracking-[0.14em] text-white/40">{stat.label}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <!-- ══ FEATURES ══════════════════════════════════════════════════════ -->
+  <section id="features" class="relative py-20 md:py-28">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6">
+      <div class:list={['mx-auto max-w-2xl text-center', fadeClass]}>
+        <span class="eyebrow">Возможности</span>
+        <h2 class="mt-5 text-3xl font-extrabold tracking-tight text-white md:text-5xl">
+          Всё, что делает игру <span class="gradient-text">красивее</span>
+        </h2>
+        <p class="mt-4 text-base text-white/55 md:text-lg">
+          Модули, косметика и интерфейс в одном клиенте. Ничего лишнего — только то, что ты включишь сам.
+        </p>
+      </div>
+
+      <div class="mt-14 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {
+          features.map((feature) => (
+            <article class:list={['card-glass group p-6 md:p-7', fadeClass]}>
+              <span class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500/30 to-fuchsia-500/15 text-violet-200 ring-1 ring-inset ring-violet-400/25 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
+                <Icon name={feature.icon} class="h-6 w-6" />
+              </span>
+              <h3 class="mt-5 text-lg font-semibold text-white">{feature.title}</h3>
+              <p class="mt-2 text-sm leading-relaxed text-white/55">{feature.text}</p>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ VISUALS ═══════════════════════════════════════════════════════ -->
+  <section id="visuals" class="relative py-20 md:py-28">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6">
+      <div class:list={['max-w-2xl', fadeClass]}>
+        <span class="eyebrow">Визуалы</span>
+        <h2 class="mt-5 text-3xl font-extrabold tracking-tight text-white md:text-5xl">
+          Не мокап. <span class="gradient-text">Это клиент.</span>
+        </h2>
+        <p class="mt-4 text-base text-white/55 md:text-lg">
+          Одно меню — все модули. Настрой один раз и забери с собой на любое устройство.
+        </p>
+      </div>
+
+      <div class="mt-14 grid gap-5 md:grid-cols-3">
+        {
+          showpieces.map((item) => (
+            <article class:list={['card-glass group overflow-hidden p-1', fadeClass]}>
+              <div class:list={['relative overflow-hidden rounded-[1.05rem] bg-gradient-to-br p-6', item.gradient]}>
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-semibold tracking-[0.22em] text-white/40">{item.num}</span>
+                  <Icon name={item.icon} class:list={['h-5 w-5', item.accent]} />
+                </div>
+                <div class="mt-10 space-y-2" aria-hidden="true">
+                  <div class="h-2 w-3/4 rounded-full bg-white/20" />
+                  <div class="h-2 w-1/2 rounded-full bg-white/10" />
+                  <div class="mt-4 grid grid-cols-3 gap-2">
+                    <div class="h-10 rounded-lg bg-white/10" />
+                    <div class="h-10 rounded-lg bg-white/[0.07]" />
+                    <div class="h-10 rounded-lg bg-white/10" />
+                  </div>
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-t from-[#0b0718] via-transparent to-transparent opacity-80" />
+              </div>
+              <div class="p-5">
+                <h3 class="text-lg font-semibold text-white">{item.title}</h3>
+                <p class="mt-2 text-sm leading-relaxed text-white/55">{item.text}</p>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ ACCOUNT ═══════════════════════════════════════════════════════ -->
+  <section id="account" class="relative py-20 md:py-28">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6">
+      <div class="grid items-center gap-12 lg:grid-cols-2">
+        <div class:list={[fadeClass]}>
+          <span class="eyebrow">Аккаунт</span>
+          <h2 class="mt-5 text-3xl font-extrabold tracking-tight text-white md:text-5xl">
+            Твой сетап <span class="gradient-text">всегда с тобой</span>
+          </h2>
+          <p class="mt-4 text-base text-white/55 md:text-lg">
+            Косметика, конфиги и друзья живут в аккаунте, а не на одном ПК. Вошёл на новом устройстве — клиент выглядит
+            точно так же, как ты его оставил.
+          </p>
+
+          <ul class="mt-8 space-y-3 text-sm text-white/70">
+            {
+              [
+                'Косметика и скины синхронизированы',
+                'Конфиги модулей и раскладка HUD',
+                'Список друзей и приглашения на сервер',
+                'Темы и пресеты в облаке',
+              ].map((item) => (
+                <li class="flex items-start gap-3">
+                  <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300">
+                    <Icon name="tabler:check" class="h-3.5 w-3.5" />
+                  </span>
+                  {item}
+                </li>
+              ))
+            }
+          </ul>
+
+          <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+            <button type="button" data-account-trigger="register" class="btn btn-amethyst !px-7 !py-3.5 text-sm"
+              >Создать аккаунт</button
+            >
+            <button type="button" data-account-trigger class="btn btn-ghost !px-7 !py-3.5 text-sm"
+              >У меня есть аккаунт</button
+            >
+          </div>
+        </div>
+
+        <div class:list={['relative', fadeClass]}>
+          <div class="absolute -inset-6 -z-10 rounded-[2rem] bg-violet-600/15 blur-3xl" aria-hidden="true"></div>
+          <div class="card-glass p-5 md:p-6">
+            <div class="flex items-center gap-3 border-b border-white/10 pb-4">
+              <span
+                class="inline-flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-base font-bold text-white"
+                >A</span
+              >
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-sm font-semibold text-white">AmethystPlayer</p>
+                <p class="truncate text-xs text-white/45">player@amethyst.gg</p>
+              </div>
+              <span class="rounded-full bg-emerald-400/15 px-2.5 py-1 text-[0.65rem] font-semibold text-emerald-300"
+                >ONLINE</span
+              >
+            </div>
+
+            <div class="space-y-2 py-4 text-sm">
+              {
+                [
+                  ['Косметика', '535 предметов'],
+                  ['Конфиги модулей', '12 пресетов'],
+                  ['Раскладка HUD', 'синхронизирована'],
+                  ['Друзья', '8 онлайн'],
+                ].map(([label, value]) => (
+                  <div class="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2.5">
+                    <span class="text-white/55">{label}</span>
+                    <span class="font-medium text-white/85">{value}</span>
+                  </div>
+                ))
+              }
+            </div>
+
+            <div class="flex items-center justify-between border-t border-white/10 pt-4 text-xs text-white/40">
+              <span class="inline-flex items-center gap-1.5">
+                <Icon name="tabler:shield-check" class="h-4 w-4 text-emerald-300" />
+                Защищено аккаунтом
+              </span>
+              <span>AmethystVisuals</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ PRICING ═══════════════════════════════════════════════════════ -->
+  <section id="pricing" class="relative py-20 md:py-28">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6">
+      <div class:list={['mx-auto max-w-2xl text-center', fadeClass]}>
+        <span class="eyebrow">Тарифы</span>
+        <h2 class="mt-5 text-3xl font-extrabold tracking-tight text-white md:text-5xl">
+          Выбор, который <span class="gradient-text">не разочарует</span>
+        </h2>
+        <p class="mt-4 text-base text-white/55 md:text-lg">
+          Сейчас в клиенте один тариф — и он бесплатный. Все базовые визуалы, HUD и темы доступны сразу, без карты и
+          ограничений по времени.
+        </p>
+      </div>
+
+      <article
+        class:list={[
+          'relative mt-14 overflow-hidden rounded-3xl border border-violet-400/25 bg-[#0b0718] shadow-[0_40px_120px_-60px_rgba(139,92,246,0.9)]',
+          fadeClass,
+        ]}
+      >
+        <!-- Decorative layers -->
+        <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+          <div class="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-violet-600/30 blur-3xl"></div>
+          <div class="absolute -bottom-32 right-0 h-80 w-80 rounded-full bg-fuchsia-600/20 blur-3xl"></div>
+          <div class="free-grid absolute inset-0 opacity-[0.08]"></div>
+          <div
+            class="absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-violet-400/70 to-transparent"
+          >
+          </div>
+        </div>
+
+        <div class="relative grid gap-10 p-6 sm:p-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:p-14">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="eyebrow">Free навсегда</span>
+              <span
+                class="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-emerald-300"
+              >
+                <Icon name="tabler:check" class="h-3.5 w-3.5" />
+                Без карты
+              </span>
+            </div>
+
+            <div class="mt-6 flex flex-wrap items-end gap-x-3 gap-y-1">
+              <span class="gradient-text text-6xl font-extrabold leading-none sm:text-7xl">0 ₽</span>
+              <span class="mb-2 text-sm text-white/45">навсегда · без автосписаний</span>
+            </div>
+
+            <p class="mt-4 max-w-lg text-sm leading-relaxed text-white/55">
+              Забирай весь базовый набор внешнего вида: модули, редактор HUD, темы и стартовую косметику. Без пробного
+              периода и скрытых условий.
+            </p>
+
+            <ul class="mt-8 grid gap-3 text-sm text-white/70 sm:grid-cols-2">
+              {
+                [
+                  '32 базовых визуальных модуля',
+                  'Полный редактор HUD и темы',
+                  'Стартовая косметика',
+                  'Синхронизация аккаунта',
+                  'Все обновления клиента',
+                  'Поддержка в чате 24/7',
+                ].map((item) => (
+                  <li class="flex items-start gap-2.5">
+                    <span class="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-violet-300 ring-1 ring-inset ring-violet-400/25">
+                      <Icon name="tabler:check" class="h-3 w-3" />
+                    </span>
+                    {item}
+                  </li>
+                ))
+              }
+            </ul>
+
+            <div class="mt-9 flex flex-col gap-3 sm:flex-row">
+              <button type="button" data-account-trigger="register" class="btn btn-amethyst !px-7 !py-3.5 text-sm">
+                Начать бесплатно
+              </button>
+              <a href="#download" class="btn btn-ghost !px-7 !py-3.5 text-sm">
+                <Icon name="tabler:download" class="mr-2 h-4 w-4" />
+                Скачать лаунчер
+              </a>
+            </div>
+          </div>
+
+          <div class="mx-auto w-full max-w-sm">
+            <div class="relative">
+              <div class="absolute inset-6 -z-0 animate-glow rounded-full bg-violet-600/30 blur-3xl" aria-hidden="true">
+              </div>
+              <div class="free-ring" aria-hidden="true"></div>
+
+              <Image
+                src={crystal}
+                alt="Кристалл AmethystVisuals"
+                width={320}
+                height={320}
+                class="relative mx-auto w-56 animate-float drop-shadow-[0_24px_60px_rgba(139,92,246,0.55)] sm:w-64"
+              />
+            </div>
+
+            <div class="mt-6 flex flex-col gap-2">
+              <div class="card-glass flex w-full items-center gap-2.5 !rounded-full px-4 py-2.5 text-xs text-white/75">
+                <Icon name="tabler:sparkles" class="h-4 w-4 shrink-0 text-fuchsia-300" />
+                32 модуля
+              </div>
+              <div class="card-glass flex w-full items-center gap-2.5 !rounded-full px-4 py-2.5 text-xs text-white/75">
+                <Icon name="tabler:layout-dashboard" class="h-4 w-4 shrink-0 text-violet-300" />
+                HUD + темы
+              </div>
+              <div class="card-glass flex w-full items-center gap-2.5 !rounded-full px-4 py-2.5 text-xs text-white/75">
+                <Icon name="tabler:infinity" class="h-4 w-4 shrink-0 text-emerald-300" />
+                Без ограничения по времени
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <p class="mt-6 text-center text-xs text-white/35">
+        Бесплатно навсегда. Платные тарифы появятся позже — анонсы будут в чате поддержки.
+      </p>
+    </div>
+  </section>
+
+  <!-- ══ FAQ ═══════════════════════════════════════════════════════════ -->
+  <section id="faq" class="relative py-20 md:py-28">
+    <div class="mx-auto max-w-3xl px-4 sm:px-6">
+      <div class:list={['text-center', fadeClass]}>
+        <span class="eyebrow">FAQ</span>
+        <h2 class="mt-5 text-3xl font-extrabold tracking-tight text-white md:text-5xl">
+          Частые <span class="gradient-text">вопросы</span>
+        </h2>
+        <p class="mt-4 text-base text-white/55">
+          Не нашёл ответ? Открой чат поддержки — бот ответит сразу, а при необходимости передаст человеку.
+        </p>
+      </div>
+
+      <div class="mt-12 space-y-3">
+        {
+          faqs.map((item) => (
+            <details class:list={['card-glass group overflow-hidden px-5 py-4 md:px-6', fadeClass]}>
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-base font-medium text-white/90">
+                {item.q}
+                <Icon
+                  name="tabler:plus"
+                  class="h-5 w-5 shrink-0 text-violet-300 transition-transform duration-300 group-open:rotate-45"
+                />
+              </summary>
+              <p class="mt-3 text-sm leading-relaxed text-white/55">{item.a}</p>
+            </details>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ DOWNLOAD ══════════════════════════════════════════════════════ -->
+  <section id="download" class="relative py-20 md:py-28">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6">
+      <div
+        class="relative overflow-hidden rounded-3xl border border-violet-400/25 bg-gradient-to-br from-violet-700/30 via-[#0d0820] to-fuchsia-700/20 px-6 py-14 text-center md:px-12 md:py-20"
+      >
+        <div class="pointer-events-none absolute inset-0 -z-0 opacity-60" aria-hidden="true">
+          <div class="absolute -left-20 top-0 h-64 w-64 rounded-full bg-violet-600/40 blur-3xl"></div>
+          <div class="absolute -right-10 bottom-0 h-64 w-64 rounded-full bg-fuchsia-600/30 blur-3xl"></div>
+        </div>
+
+        <div class="relative z-10">
+          <span class="eyebrow">Готов начать?</span>
+          <h2 class="mx-auto mt-5 max-w-2xl text-3xl font-extrabold tracking-tight text-white md:text-5xl">
+            Пора посмотреть на Minecraft <span class="gradient-text">иначе</span>
+          </h2>
+          <p class="mx-auto mt-4 max-w-xl text-base text-white/60">
+            Скачай лаунчер, создай аккаунт и забери свой сетап на любое устройство. Бесплатный тариф — без карты и
+            ограничений по времени.
+          </p>
+
+          <div class="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <button type="button" data-account-trigger class="btn btn-amethyst !px-8 !py-4 text-base"
+              >Скачать лаунчер</button
+            >
+            <button type="button" data-open-chat class="btn btn-ghost !px-8 !py-4 text-base">
+              <Icon name="tabler:message-circle" class="mr-2 h-5 w-5" />
+              Задать вопрос
+            </button>
+          </div>
+
+          <p class="mt-6 text-xs text-white/35">Windows 10/11 · 120 МБ · Автообновление</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</PageLayout>
+
+<style>
+  .hero-aurora {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    opacity: 0.55;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+  }
+
+  .hero-aurora__blob {
+    position: absolute;
+    display: block;
+    border-radius: 50%;
+    filter: blur(80px);
+    will-change: transform;
+    animation: hero-aurora-drift 26s ease-in-out infinite alternate;
+  }
+
+  .hero-aurora__blob--violet {
+    top: -16rem;
+    left: -12rem;
+    width: 34rem;
+    height: 34rem;
+    background: radial-gradient(circle at 35% 35%, rgb(139 92 246 / 55%), rgb(109 40 217 / 0%) 70%);
+    animation-duration: 24s;
+  }
+
+  .hero-aurora__blob--blue {
+    top: -10rem;
+    right: -14rem;
+    width: 30rem;
+    height: 30rem;
+    background: radial-gradient(circle at 55% 45%, rgb(56 130 246 / 45%), rgb(1 97 239 / 0%) 70%);
+    animation-duration: 32s;
+    animation-delay: -10s;
+  }
+
+  .hero-aurora__blob--amethyst {
+    bottom: -18rem;
+    left: 38%;
+    width: 36rem;
+    height: 36rem;
+    background: radial-gradient(circle at 50% 50%, rgb(192 132 252 / 32%), rgb(109 40 217 / 0%) 72%);
+    animation-duration: 38s;
+    animation-delay: -18s;
+  }
+
+  @keyframes hero-aurora-drift {
+    0% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(3.5rem, -2.5rem, 0) scale(1.08);
+    }
+    100% {
+      transform: translate3d(-3rem, 2.5rem, 0) scale(1.04);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .hero-aurora__blob {
+      filter: blur(56px);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-aurora__blob {
+      animation: none;
+    }
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .free-grid {
+    background-image:
+      linear-gradient(rgb(196 181 253 / 40%) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(196 181 253 / 40%) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(ellipse at 75% 50%, #000 5%, transparent 65%);
+    mask-image: radial-gradient(ellipse at 75% 50%, #000 5%, transparent 65%);
+  }
+
+  .free-ring {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: min(20rem, 92%);
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 1px dashed rgb(196 181 253 / 30%);
+    animation: free-spin 48s linear infinite;
+    pointer-events: none;
+  }
+
+  .free-ring::before {
+    content: '';
+    position: absolute;
+    top: -3px;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background-color: #c084fc;
+    box-shadow: 0 0 12px 2px rgb(192 132 252 / 70%);
+  }
+
+  @keyframes free-spin {
+    to {
+      transform: translate(-50%, -50%) rotate(360deg);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .free-ring {
+      animation: none;
+    }
+  }
+</style>
